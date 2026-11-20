@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Rumah Tangga - Poltekbang Surabaya</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+
+  <!-- MOBILE TOPBAR -->
+  <div class="lg:hidden sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-md">
+    <button onclick="toggleSidebar(true)" class="p-2 bg-slate-800 rounded-xl">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <span class="font-extrabold text-xs tracking-wide">SUB-BAGIAN RUMAH TANGGA</span>
+    <span class="w-8"></span>
+  </div>
+
+  <div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-200 z-50 flex flex-col justify-between border-r border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    <div>
+      <!-- BRANDING -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-plane-up"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-extrabold text-white leading-tight">Rumah Tangga</h1>
+            <span class="text-[11px] text-slate-400">Poltekbang Surabaya</span>
+          </div>
+        </div>
+        <button onclick="toggleSidebar(false)" class="lg:hidden text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- MENU UTAMA -->
+      <nav class="p-4 space-y-1.5">
+        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Menu Utama</div>
+
+        <button onclick="switchTab('ringkasan')" id="nav-ringkasan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-600 text-white shadow-md transition cursor-pointer">
+          <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+          <span>Ringkasan Dashboard</span>
+        </button>
+
+        <button onclick="switchTab('ruangan')" id="nav-ruangan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-door-open w-4 text-center text-sky-400"></i>
+          <span>1. Peminjaman Ruangan</span>
+        </button>
+
+        <button onclick="switchTab('kendaraan')" id="nav-kendaraan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-car-side w-4 text-center text-emerald-400"></i>
+          <span>2. Peminjaman Kendaraan</span>
+        </button>
+
+        <button onclick="switchTab('inventaris')" id="nav-inventaris" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-boxes-stacked w-4 text-center text-amber-400"></i>
+          <span>3. Inventaris Barang</span>
+        </button>
+
+        <button onclick="switchTab('ac')" id="nav-ac" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-snowflake w-4 text-center text-cyan-400"></i>
+          <span>4. Data AC</span>
+        </button>
+
+        <button onclick="switchTab('apar')" id="nav-apar" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
+          <i class="fa-solid fa-fire-extinguisher w-4 text-center text-rose-400"></i>
+          <span>5. Data APAR & Hydrant</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- FOOTER SIDEBAR -->
+    <div class="p-4 border-t border-slate-800 bg-slate-950/70 space-y-2.5">
+      <button onclick="toggleAdminMode()" id="btnAdminStatus" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-lock text-amber-400"></i>
+        <span>Login Admin (Kelola Data)</span>
+      </button>
+      <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
+        </span>
+        <span id="clock" class="font-mono font-bold text-slate-300">--:--:--</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- KONTEN UTAMA -->
+  <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+
+    <!-- HEADER BANNER -->
+    <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-sky-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <span class="text-[10px] font-bold uppercase tracking-widest text-sky-300">BIDANG UMUM • POLITEKNIK PENERBANGAN SURABAYA</span>
+        <h2 id="pageTitle" class="text-2xl font-extrabold mt-1">Ringkasan Layanan Rumah Tangga</h2>
+        <p id="pageSubtitle" class="text-xs text-sky-100/90 mt-1">Monitoring peminjaman ruangan, kendaraan dinas, inventaris, pemeliharaan AC, serta kesiapan APAR & Hydrant.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="loadAllData(true)" class="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
+          <i class="fa-solid fa-rotate"></i> Refresh Data
+        </button>
+      </div>
+    </div>
+
+    <!-- SECTION 0: RINGKASAN DASHBOARD -->
+    <section id="sec-ringkasan" class="tab-section space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div onclick="switchTab('ruangan')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-sky-400 transition cursor-pointer">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Peminjaman Ruangan</span>
+            <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center"><i class="fa-solid fa-door-open"></i></span>
+          </div>
+          <div id="kpi-ruangan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Total jadwal tercatat</div>
+        </div>
+
+        <div onclick="switchTab('kendaraan')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-emerald-400 transition cursor-pointer">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Kendaraan Dinas</span>
+            <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-car-side"></i></span>
+          </div>
+          <div id="kpi-kendaraan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Total penggunaan kendaraan</div>
+        </div>
+
+        <div onclick="switchTab('inventaris')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-amber-400 transition cursor-pointer">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Inventaris Barang</span>
+            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
+          </div>
+          <div id="kpi-inventaris" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Total unit barang</div>
+        </div>
+
+        <div onclick="switchTab('ac')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-cyan-400 transition cursor-pointer">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Unit AC Terdata</span>
+            <span class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center"><i class="fa-solid fa-snowflake"></i></span>
+          </div>
+          <div id="kpi-ac" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+          <div id="kpi-ac-sub" class="text-[11px] text-slate-500 mt-1">0 unit butuh servis</div>
+        </div>
+
+        <div onclick="switchTab('apar')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-rose-400 transition cursor-pointer">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-slate-400">APAR & Hydrant</span>
+            <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
+          </div>
+          <div id="kpi-apar" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+          <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 unit siap pakai</div>
+        </div>
+      </div>
+
+      <!-- KARTU AKSES CEPAT 5 MODUL -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div onclick="switchTab('ruangan')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-door-open"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">1. Peminjaman Ruangan</h3>
+            <p class="text-xs text-slate-500 mt-1">Booking ruang rapat, aula, kelas, dan jadwal pemakaian fasilitas gedung.</p>
+          </div>
+        </div>
+
+        <div onclick="switchTab('kendaraan')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-car-side"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">2. Peminjaman Kendaraan</h3>
+            <p class="text-xs text-slate-500 mt-1">Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan driver.</p>
+          </div>
+        </div>
+
+        <div onclick="switchTab('inventaris')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">3. Inventaris Barang</h3>
+            <p class="text-xs text-slate-500 mt-1">Pendataan perlengkapan rumah tangga, lokasi penempatan, dan kondisi barang.</p>
+          </div>
+        </div>
+
+        <div onclick="switchTab('ac')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-snowflake"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">4. Data AC</h3>
+            <p class="text-xs text-slate-500 mt-1">Database unit AC per ruangan, kapasitas PK, riwayat servis, dan status fungsi.</p>
+          </div>
+        </div>
+
+        <div onclick="switchTab('apar')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">5. Data APAR & Hydrant</h3>
+            <p class="text-xs text-slate-500 mt-1">Monitoring titik alat pemadam kebakaran, masa berlaku tabung, dan inspeksi rutin.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: PEMINJAMAN RUANGAN -->
+    <section id="sec-ruangan" class="tab-section hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+        <input type="search" oninput="renderRuangan()" id="search-ruangan" placeholder="Cari ruangan, peminjam, atau kegiatan..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="openModal('modal-ruangan')" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Ajukan Peminjaman Ruangan
+        </button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Tanggal & Jam</th>
+              <th class="p-3.5">Ruangan</th>
+              <th class="p-3.5">Peminjam / Unit</th>
+              <th class="p-3.5">Kegiatan</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ruangan" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 2: PEMINJAMAN KENDARAAN -->
+    <section id="sec-kendaraan" class="tab-section hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+        <input type="search" oninput="renderKendaraan()" id="search-kendaraan" placeholder="Cari kendaraan, plat nomor, atau peminjam..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="openModal('modal-kendaraan')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Ajukan Peminjaman Kendaraan
+        </button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Tanggal</th>
+              <th class="p-3.5">Kendaraan & Nopol</th>
+              <th class="p-3.5">Peminjam</th>
+              <th class="p-3.5">Tujuan & Driver</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-kendaraan" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: INVENTARIS BARANG -->
+    <section id="sec-inventaris" class="tab-section hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+        <input type="search" oninput="renderInventaris()" id="search-inventaris" placeholder="Cari kode, nama barang, atau lokasi..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="openModal('modal-inventaris')" class="admin-only hidden px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Tambah Inventaris
+        </button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Kode</th>
+              <th class="p-3.5">Nama Barang</th>
+              <th class="p-3.5">Lokasi</th>
+              <th class="p-3.5">Jumlah</th>
+              <th class="p-3.5">Kondisi</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-inventaris" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: DATA AC -->
+    <section id="sec-ac" class="tab-section hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+        <input type="search" oninput="renderAc()" id="search-ac" placeholder="Cari kode AC, ruangan, atau merk..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="openModal('modal-ac')" class="admin-only hidden px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Tambah Data AC
+        </button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Kode AC</th>
+              <th class="p-3.5">Lokasi Ruangan</th>
+              <th class="p-3.5">Merk / PK</th>
+              <th class="p-3.5">Servis Terakhir</th>
+              <th class="p-3.5">Kondisi</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ac" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 5: DATA APAR & HYDRANT -->
+    <section id="sec-apar" class="tab-section hidden space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+        <input type="search" oninput="renderApar()" id="search-apar" placeholder="Cari kode, APAR/Hydrant, atau lokasi..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="openModal('modal-apar')" class="admin-only hidden px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+          <i class="fa-solid fa-plus mr-1"></i> Tambah APAR / Hydrant
+        </button>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Kode Alat</th>
+              <th class="p-3.5">Jenis</th>
+              <th class="p-3.5">Lokasi Penempatan</th>
+              <th class="p-3.5">Tipe / Kapasitas</th>
+              <th class="p-3.5">Kadaluarsa</th>
+              <th class="p-3.5">Kondisi</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-apar" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL FORM 1: RUANGAN -->
+  <div id="modal-ruangan" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="submitForm(event, 'peminjaman_ruangan', 'modal-ruangan')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
+      <h3 class="text-base font-extrabold text-slate-900">Ajukan Peminjaman Ruangan</h3>
+      <input name="nama_ruangan" required placeholder="Nama Ruangan (misal: Ruang Rapat Utama / Aula)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="peminjam" required placeholder="Nama Peminjam" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="unit_kerja" placeholder="Unit Kerja / Jurusan" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="kegiatan" required placeholder="Nama Kegiatan" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div class="grid grid-cols-3 gap-2">
+        <input type="date" name="tanggal" required class="border border-slate-300 rounded-xl p-2.5">
+        <input type="time" name="jam_mulai" class="border border-slate-300 rounded-xl p-2.5">
+        <input type="time" name="jam_selesai" class="border border-slate-300 rounded-xl p-2.5">
+      </div>
+      <input name="no_wa" placeholder="No. WhatsApp Peminjam" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-sky-600 text-white rounded-xl font-bold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL FORM 2: KENDARAAN -->
+  <div id="modal-kendaraan" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="submitForm(event, 'peminjaman_kendaraan', 'modal-kendaraan')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
+      <h3 class="text-base font-extrabold text-slate-900">Ajukan Peminjaman Kendaraan</h3>
+      <input name="nama_kendaraan" required placeholder="Jenis Kendaraan (misal: Toyota Innova / Hiace)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="plat_nomor" placeholder="Nomor Polisi (misal: L 1234 AB)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="peminjam" required placeholder="Nama Peminjam / Unit" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="tujuan" required placeholder="Tujuan Perjalanan Dinas" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="text-[10px] text-slate-500">Tgl Berangkat</label><input type="date" name="tanggal_berangkat" required class="w-full border border-slate-300 rounded-xl p-2.5"></div>
+        <div><label class="text-[10px] text-slate-500">Tgl Kembali</label><input type="date" name="tanggal_kembali" class="w-full border border-slate-300 rounded-xl p-2.5"></div>
+      </div>
+      <input name="driver" placeholder="Nama Driver (Opsional)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL FORM 3: INVENTARIS -->
+  <div id="modal-inventaris" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="submitForm(event, 'inventaris_rt', 'modal-inventaris')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
+      <h3 class="text-base font-extrabold text-slate-900">Tambah Inventaris Barang</h3>
+      <input name="kode_barang" placeholder="Kode Inventaris" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="nama_barang" required placeholder="Nama Barang" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="lokasi" required placeholder="Lokasi Ruangan / Gedung" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div class="grid grid-cols-2 gap-2">
+        <input type="number" name="jumlah" value="1" min="1" required placeholder="Jumlah" class="border border-slate-300 rounded-xl p-2.5">
+        <select name="kondisi" class="border border-slate-300 rounded-xl p-2.5">
+          <option value="Baik">Baik</option>
+          <option value="Rusak Ringan">Rusak Ringan</option>
+          <option value="Rusak Berat">Rusak Berat</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL FORM 4: DATA AC -->
+  <div id="modal-ac" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="submitForm(event, 'data_ac', 'modal-ac')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
+      <h3 class="text-base font-extrabold text-slate-900">Tambah Data Unit AC</h3>
+      <input name="kode_ac" placeholder="Kode AC (misal: AC-GD1-01)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="lokasi_ruangan" required placeholder="Lokasi Ruangan" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="merk_pk" required placeholder="Merk & Kapasitas (misal: Daikin 2 PK)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div><label class="text-[10px] text-slate-500">Tanggal Servis Terakhir</label><input type="date" name="tgl_servis_terakhir" class="w-full border border-slate-300 rounded-xl p-2.5"></div>
+      <select name="kondisi" class="w-full border border-slate-300 rounded-xl p-2.5">
+        <option value="Normal">Normal / Dingin</option>
+        <option value="Perlu Cuci/Servis">Perlu Cuci / Servis</option>
+        <option value="Rusak">Rusak</option>
+      </select>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-cyan-600 text-white rounded-xl font-bold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL FORM 5: DATA APAR & HYDRANT -->
+  <div id="modal-apar" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="submitForm(event, 'data_apar_hydrant', 'modal-apar')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
+      <h3 class="text-base font-extrabold text-slate-900">Tambah Data APAR / Hydrant</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <input name="kode_alat" required placeholder="Kode (misal: APAR-01)" class="border border-slate-300 rounded-xl p-2.5">
+        <select name="jenis" class="border border-slate-300 rounded-xl p-2.5">
+          <option value="APAR">APAR</option>
+          <option value="Hydrant">Hydrant</option>
+        </select>
+      </div>
+      <input name="lokasi" required placeholder="Lokasi Penempatan" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <input name="tipe_kapasitas" placeholder="Tipe / Kapasitas (misal: Powder 6 Kg)" class="w-full border border-slate-300 rounded-xl p-2.5">
+      <div><label class="text-[10px] text-slate-500">Tanggal Kadaluarsa Tabung</label><input type="date" name="tgl_kadaluarsa" class="w-full border border-slate-300 rounded-xl p-2.5"></div>
+      <select name="kondisi" class="w-full border border-slate-300 rounded-xl p-2.5">
+        <option value="Siap Pakai">Siap Pakai</option>
+        <option value="Perlu Isi Ulang">Perlu Isi Ulang</option>
+        <option value="Rusak">Rusak</option>
+      </select>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-xl font-bold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+  <script>
+    let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+    let db = {
+      ruangan: [],
+      kendaraan: [],
+      inventaris: [],
+      ac: [],
+      apar: []
+    };
+
+    const TITLES = {
+      ringkasan: ['Ringkasan Layanan Rumah Tangga', 'Monitoring peminjaman ruangan, kendaraan dinas, inventaris, pemeliharaan AC, serta kesiapan APAR & Hydrant.'],
+      ruangan: ['1. Peminjaman Ruangan', 'Jadwal penggunaan dan pengajuan peminjaman ruang rapat, kelas, maupun aula kampus.'],
+      kendaraan: ['2. Peminjaman Kendaraan Dinas', 'Monitoring operasional kendaraan dinas, tujuan perjalanan, dan jadwal kembali.'],
+      inventaris: ['3. Inventaris Barang Rumah Tangga', 'Daftar perlengkapan, jumlah aset, lokasi penempatan, dan status kondisi barang.'],
+      ac: ['4. Data Unit AC', 'Pemantauan unit pendingin ruangan (AC), jadwal servis berkala, dan status operasional.'],
+      apar: ['5. Data APAR & Hydrant', 'Monitoring keselamatan kebakaran: titik APAR & Hydrant, masa berlaku, dan kesiapan alat.']
+    };
+
+    setInterval(() => {
+      document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
+    }, 1000);
+
+    function toggleSidebar(show) {
+      document.getElementById('sidebar').classList.toggle('-translate-x-full', !show);
+      document.getElementById('sidebarBackdrop').classList.toggle('hidden', !show);
+    }
+
+    function showToast(msg, isErr = false) {
+      const el = document.createElement('div');
+      el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+      el.innerText = msg;
+      document.getElementById('toast').appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function applyAdminUI() {
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+      const btn = document.getElementById('btnAdminStatus');
+      btn.innerHTML = isAdmin
+        ? `<i class="fa-solid fa-unlock text-emerald-400"></i><span>Mode Admin Aktif (Logout)</span>`
+        : `<i class="fa-solid fa-lock text-amber-400"></i><span>Login Admin (Kelola Data)</span>`;
+    }
+
+    async function toggleAdminMode() {
+      if (isAdmin) {
+        isAdmin = false;
+        sessionStorage.removeItem('rt_admin');
+        applyAdminUI();
+        renderAll();
+        showToast('Mode Admin dinonaktifkan');
+        return;
+      }
+      const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
+      if (!pin) return;
+      const res = await fetch('/api/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      if (res.ok) {
+        isAdmin = true;
+        sessionStorage.setItem('rt_admin', '1');
+        applyAdminUI();
+        renderAll();
+        showToast('Login Admin berhasil!');
+      } else {
+        showToast('PIN Admin salah!', true);
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-sky-600', 'text-white', 'shadow-md');
+        b.classList.add('text-slate-300');
+      });
+      const active = document.getElementById(`nav-${tab}`);
+      active.classList.add('bg-sky-600', 'text-white', 'shadow-md');
+      active.classList.remove('text-slate-300');
+
+      document.getElementById('pageTitle').innerText = TITLES[tab][0];
+      document.getElementById('pageSubtitle').innerText = TITLES[tab][1];
+      toggleSidebar(false);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModals() { document.querySelectorAll('.modal-box').forEach(m => m.classList.add('hidden')); }
+
+    async function loadAllData(notify = false) {
+      try {
+        const [ruangan, kendaraan, inventaris, ac, apar] = await Promise.all([
+          fetch('/api/data/peminjaman_ruangan').then(r => r.json()),
+          fetch('/api/data/peminjaman_kendaraan').then(r => r.json()),
+          fetch('/api/data/inventaris_rt').then(r => r.json()),
+          fetch('/api/data/data_ac').then(r => r.json()),
+          fetch('/api/data/data_apar_hydrant').then(r => r.json())
+        ]);
+        db = { ruangan, kendaraan, inventaris, ac, apar };
+        renderAll();
+        if (notify) showToast('Data berhasil diperbarui!');
+      } catch (e) {
+        showToast('Gagal memuat data dari server', true);
+      }
+    }
+
+    function renderAll() {
+      document.getElementById('kpi-ruangan').innerText = db.ruangan.length;
+      document.getElementById('kpi-kendaraan').innerText = db.kendaraan.length;
+      const totalBarang = db.inventaris.reduce((s, x) => s + Number(x.jumlah || 0), 0);
+      document.getElementById('kpi-inventaris').innerText = totalBarang;
+      document.getElementById('kpi-ac').innerText = db.ac.length;
+      const acServis = db.ac.filter(x => x.kondisi !== 'Normal').length;
+      document.getElementById('kpi-ac-sub').innerText = `${acServis} unit perlu perhatian`;
+      document.getElementById('kpi-apar').innerText = db.apar.length;
+      const aparSiap = db.apar.filter(x => x.kondisi === 'Siap Pakai').length;
+      document.getElementById('kpi-apar-sub').innerText = `${aparSiap} unit siap pakai`;
+
+      renderRuangan();
+      renderKendaraan();
+      renderInventaris();
+      renderAc();
+      renderApar();
+      applyAdminUI();
+    }
+
+    function actionButtons(table, id, nextStatusLabel, nextStatusObj) {
+      if (!isAdmin) return '';
+      return `
+        <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+          <button onclick='updateItem("${table}", ${id}, ${JSON.stringify(nextStatusObj)})' class="px-2.5 py-1 bg-sky-100 text-sky-700 rounded-lg font-bold hover:bg-sky-200 cursor-pointer">${nextStatusLabel}</button>
+          <button onclick='deleteItem("${table}", ${id})' class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+        </td>`;
+    }
+
+    function renderRuangan() {
+      const q = (document.getElementById('search-ruangan').value || '').toLowerCase();
+      const rows = db.ruangan.filter(r => `${r.nama_ruangan} ${r.peminjam} ${r.kegiatan}`.toLowerCase().includes(q));
+      document.getElementById('tbody-ruangan').innerHTML = rows.length ? rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-semibold">${r.tanggal || '-'}<br><span class="text-[11px] text-slate-400">${r.jam_mulai || ''} - ${r.jam_selesai || ''}</span></td>
+          <td class="p-3.5 font-bold text-slate-900">${r.nama_ruangan}</td>
+          <td class="p-3.5">${r.peminjam}<br><span class="text-[11px] text-slate-400">${r.unit_kerja || '-'}</span></td>
+          <td class="p-3.5">${r.kegiatan || '-'}</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'Selesai' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}">${r.status}</span></td>
+          ${actionButtons('peminjaman_ruangan', r.id, 'Selesai', { status: 'Selesai' })}
+        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data peminjaman ruangan.</td></tr>`;
+    }
+
+    function renderKendaraan() {
+      const q = (document.getElementById('search-kendaraan').value || '').toLowerCase();
+      const rows = db.kendaraan.filter(r => `${r.nama_kendaraan} ${r.plat_nomor} ${r.peminjam} ${r.tujuan}`.toLowerCase().includes(q));
+      document.getElementById('tbody-kendaraan').innerHTML = rows.length ? rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-semibold">${r.tanggal_berangkat || '-'}<br><span class="text-[11px] text-slate-400">s/d ${r.tanggal_kembali || '-'}</span></td>
+          <td class="p-3.5 font-bold text-slate-900">${r.nama_kendaraan}<br><span class="text-[11px] text-sky-600 font-mono">${r.plat_nomor || '-'}</span></td>
+          <td class="p-3.5">${r.peminjam}</td>
+          <td class="p-3.5">${r.tujuan}<br><span class="text-[11px] text-slate-400">Driver: ${r.driver || '-'}</span></td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'Kembali' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}">${r.status}</span></td>
+          ${actionButtons('peminjaman_kendaraan', r.id, 'Tandai Kembali', { status: 'Kembali' })}
+        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data peminjaman kendaraan.</td></tr>`;
+    }
+
+    function renderInventaris() {
+      const q = (document.getElementById('search-inventaris').value || '').toLowerCase();
+      const rows = db.inventaris.filter(r => `${r.kode_barang} ${r.nama_barang} ${r.lokasi}`.toLowerCase().includes(q));
+      document.getElementById('tbody-inventaris').innerHTML = rows.length ? rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-mono text-slate-500">${r.kode_barang || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${r.nama_barang}</td>
+          <td class="p-3.5">${r.lokasi || '-'}</td>
+          <td class="p-3.5 font-bold">${r.jumlah} Unit</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.kondisi === 'Baik' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${r.kondisi}</span></td>
+          ${actionButtons('inventaris_rt', r.id, 'Set Baik', { kondisi: 'Baik' })}
+        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data inventaris.</td></tr>`;
+    }
+
+    function renderAc() {
+      const q = (document.getElementById('search-ac').value || '').toLowerCase();
+      const rows = db.ac.filter(r => `${r.kode_ac} ${r.lokasi_ruangan} ${r.merk_pk}`.toLowerCase().includes(q));
+      document.getElementById('tbody-ac').innerHTML = rows.length ? rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-mono text-slate-500">${r.kode_ac || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${r.lokasi_ruangan}</td>
+          <td class="p-3.5">${r.merk_pk || '-'}</td>
+          <td class="p-3.5">${r.tgl_servis_terakhir || '-'}</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.kondisi === 'Normal' ? 'bg-cyan-100 text-cyan-800' : 'bg-amber-100 text-amber-800'}">${r.kondisi}</span></td>
+          ${actionButtons('data_ac', r.id, 'Set Normal', { kondisi: 'Normal' })}
+        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data AC.</td></tr>`;
+    }
+
+    function renderApar() {
+      const q = (document.getElementById('search-apar').value || '').toLowerCase();
+      const rows = db.apar.filter(r => `${r.kode_alat} ${r.jenis} ${r.lokasi}`.toLowerCase().includes(q));
+      document.getElementById('tbody-apar').innerHTML = rows.length ? rows.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-mono font-bold">${r.kode_alat}</td>
+          <td class="p-3.5"><span class="px-2 py-0.5 rounded-md font-bold ${r.jenis === 'Hydrant' ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'}">${r.jenis}</span></td>
+          <td class="p-3.5 font-bold text-slate-900">${r.lokasi}</td>
+          <td class="p-3.5">${r.tipe_kapasitas || '-'}</td>
+          <td class="p-3.5">${r.tgl_kadaluarsa || '-'}</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.kondisi === 'Siap Pakai' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${r.kondisi}</span></td>
+          ${actionButtons('data_apar_hydrant', r.id, 'Siap Pakai', { kondisi: 'Siap Pakai' })}
+        </tr>`).join('') : `<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada data APAR / Hydrant.</td></tr>`;
+    }
+
+    async function submitForm(e, table, modalId) {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(e.target).entries());
+      Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
+
+      const res = await fetch(`/api/data/${table}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        e.target.reset();
+        closeModals();
+        showToast('Data berhasil disimpan!');
+        loadAllData(false);
+      } else {
+        showToast('Gagal menyimpan data!', true);
+      }
+    }
+
+    async function updateItem(table, id, payload) {
+      await fetch(`/api/data/${table}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      showToast('Status diperbarui!');
+      loadAllData(false);
+    }
+
+    async function deleteItem(table, id) {
+      if (!confirm('Hapus data ini secara permanen?')) return;
+      await fetch(`/api/data/${table}/${id}`, { method: 'DELETE' });
+      showToast('Data dihapus!');
+      loadAllData(false);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      applyAdminUI();
+      loadAllData(false);
+    });
+  </script>
+</body>
+</html>
