@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen & Maintenance AC - Poltekbang Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: 700; }
+        @media print {
+            .no-print { display: none !important; }
+            #qrPrintArea { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- NAVBAR TERPADU -->
+    <nav class="bg-sky-800 text-white shadow-md no-print sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <i class="fas fa-snowflake text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Monitoring & Maintenance AC</h1>
+                    <p class="text-xs text-sky-100">Sistem Jadwal Cuci Rutin & Kartu Kendali Unit AC</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <a href="rumah-tangga.html" class="px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-900 transition">
+                    <i class="fas fa-building-user mr-1"></i> Ruangan & Kendaraan
+                </a>
+                <a href="index.html" class="px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-900 transition">
+                    <i class="fas fa-boxes-stacked mr-1"></i> Inventaris
+                </a>
+                <a href="apar.html" class="px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-900 transition">
+                    <i class="fas fa-fire-extinguisher mr-1"></i> APAR
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- KONTEN UTAMA -->
+    <main class="max-w-7xl mx-auto px-4 py-6 no-print">
+
+        <!-- STATISTIK RINGKAS -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold uppercase">Total Unit AC</p>
+                <p id="statTotalUnit" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
+                <p class="text-xs text-emerald-600 font-semibold uppercase">Kondisi Baik / Dingin</p>
+                <p id="statBaik" class="text-2xl font-extrabold text-emerald-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200">
+                <p class="text-xs text-amber-600 font-semibold uppercase">Proses Servis</p>
+                <p id="statProses" class="text-2xl font-extrabold text-amber-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-red-200">
+                <p class="text-xs text-red-600 font-semibold uppercase">Unit Rusak / Trouble</p>
+                <p id="statRusak" class="text-2xl font-extrabold text-red-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-sky-200 col-span-2 md:col-span-1">
+                <p class="text-xs text-sky-600 font-semibold uppercase">Jadwal Bulan Ini</p>
+                <p id="statBulanIni" class="text-2xl font-extrabold text-sky-600 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- TOOLBAR AKSI & PENCARIAN -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openAddModal()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Tambah Unit & Jadwal AC
+                </button>
+                <button onclick="printAllQR()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                    <i class="fas fa-qrcode"></i> Cetak Stiker QR Gedung Ini
+                </button>
+            </div>
+
+            <div class="relative w-full md:w-72">
+                <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode AC, gedung, ruang, merk..."
+                    class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            </div>
+        </div>
+
+        <!-- TAB KATEGORI GEDUNG -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2">
+                <button onclick="switchTab('G. UMUM')" id="tab-G. UMUM" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap tab-active">G. UMUM</button>
+                <button onclick="switchTab('G. LAB')" id="tab-G. LAB" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. LAB</button>
+                <button onclick="switchTab('G. ASRAMA')" id="tab-G. ASRAMA" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. ASRAMA</button>
+                <button onclick="switchTab('G. TPU')" id="tab-G. TPU" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. TPU</button>
+                <button onclick="switchTab('MONTHLY')" id="tab-MONTHLY" class="tab-btn px-5 py-3.5 text-sm font-medium text-sky-700 whitespace-nowrap">
+                    <i class="fas fa-calendar-alt mr-1"></i> JADWAL BULANAN
+                </button>
+            </div>
+
+            <!-- FILTER BULAN -->
+            <div id="monthlyFilterBar" class="hidden p-4 bg-sky-50/70 border-b border-slate-200 flex items-center gap-3">
+                <label class="text-sm font-semibold text-slate-700">Pilih Bulan Cuci / Servis:</label>
+                <input type="month" id="monthPicker" onchange="renderMonthlyView()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white">
+            </div>
+
+            <!-- TABEL MATRIKS UNIT AC -->
+            <div id="matrixView" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                            <th class="p-3 font-bold sticky left-0 bg-slate-100 z-10">Kode & Lokasi Unit AC</th>
+                            <th class="p-3 font-bold">Spesifikasi Unit</th>
+                            <th class="p-3 font-bold text-center">Matriks Jadwal Cuci / Servis AC</th>
+                            <th class="p-3 font-bold text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="acTableBody" class="divide-y divide-slate-200 text-sm">
+                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat data unit AC...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TABEL JADWAL BULANAN -->
+            <div id="monthlyView" class="hidden overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                            <th class="p-3 font-bold">Tanggal Servis</th>
+                            <th class="p-3 font-bold">Kode Unit</th>
+                            <th class="p-3 font-bold">Gedung / Ruang</th>
+                            <th class="p-3 font-bold">Merk & Kapasitas</th>
+                            <th class="p-3 font-bold">Pekerjaan & Status</th>
+                            <th class="p-3 font-bold text-center">Update</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- AREA CETAK STIKER QR -->
+    <div id="qrPrintArea" class="hidden p-6"></div>
+
+    <!-- MODAL TAMBAH UNIT AC -->
+    <div id="addModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fas fa-snowflake text-sky-600 mr-2"></i>Tambah Unit AC & Generate Jadwal</h3>
+                <button onclick="closeModal('addModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <form id="addAcForm" onsubmit="submitNewAc(event)" class="space-y-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold mb-1">Kode Unit AC *</label>
+                        <input type="text" name="kode_unit" required placeholder="Contoh: AC-UM-001" class="w-full border rounded-lg px-3 py-2 uppercase">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Kategori Gedung *</label>
+                        <select name="kategori_gedung" required class="w-full border rounded-lg px-3 py-2">
+                            <option value="G. UMUM">G. UMUM</option>
+                            <option value="G. LAB">G. LAB</option>
+                            <option value="G. ASRAMA">G. ASRAMA</option>
+                            <option value="G. TPU">G. TPU</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Nama Gedung *</label>
+                        <input type="text" name="gedung" required placeholder="Contoh: Gedung Rektorat" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold mb-1">Lantai</label>
+                            <input type="text" name="lantai" placeholder="Lt. 1" class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Ruang *</label>
+                            <input type="text" name="ruang" required placeholder="R. Tata Usaha" class="w-full border rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Merk & Tipe AC *</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" name="merk_ac" required placeholder="Daikin / Panasonic" class="w-full border rounded-lg px-3 py-2">
+                            <select name="type_ac" class="w-full border rounded-lg px-3 py-2">
+                                <option value="Split">Split</option>
+                                <option value="Standing">Standing Floor</option>
+                                <option value="Cassette">Cassette</option>
+                                <option value="Central">Central</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Kapasitas PK & Freon *</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" name="kapasitas" required placeholder="1 PK / 2 PK" class="w-full border rounded-lg px-3 py-2">
+                            <select name="freon" class="w-full border rounded-lg px-3 py-2">
+                                <option value="R32">R32</option>
+                                <option value="R410A">R410A</option>
+                                <option value="R22">R22</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-sky-50 p-3.5 rounded-xl border border-sky-100">
+                    <p class="font-semibold text-sky-900 mb-2"><i class="fas fa-calendar-check mr-1"></i> Generator Jadwal Cuci Rutin AC</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Mulai Cuci Pertama *</label>
+                            <input type="date" name="tgl_mulai" required class="w-full border rounded-lg px-3 py-1.5 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Interval Cuci</label>
+                            <select name="interval_bulan" class="w-full border rounded-lg px-3 py-1.5 bg-white">
+                                <option value="3">Setiap 3 Bulan (Triwulan)</option>
+                                <option value="2">Setiap 2 Bulan</option>
+                                <option value="1">Setiap 1 Bulan (Lab/Server)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Siklus</label>
+                            <select name="jumlah_siklus" class="w-full border rounded-lg px-3 py-1.5 bg-white">
+                                <option value="8">8x Jadwal (2 Tahun)</option>
+                                <option value="4">4x Jadwal (1 Tahun)</option>
+                                <option value="12">12x Jadwal</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('addModal')" class="px-4 py-2 rounded-lg border text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold">Simpan & Generate Jadwal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL UPDATE HASIL SERVIS -->
+    <div id="serviceModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Update Maintenance Unit AC</h3>
+                <button onclick="closeModal('serviceModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="serviceForm" onsubmit="submitServiceUpdate(event)" class="space-y-3 text-sm">
+                <input type="hidden" id="edit_id">
+                <div class="bg-slate-50 p-3 rounded-lg border">
+                    <p id="edit_title" class="font-bold text-slate-800"></p>
+                    <p id="edit_subtitle" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Tanggal Pelaksanaan Servis</label>
+                    <input type="date" id="edit_tgl" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Jenis Pekerjaan</label>
+                    <select id="edit_pekerjaan" class="w-full border rounded-lg px-3 py-2">
+                        <option value="Cuci AC Rutin">Cuci AC Rutin (Indoor & Outdoor)</option>
+                        <option value="Isi / Tambah Freon">Isi / Tambah Freon</option>
+                        <option value="Perbaikan Kebocoran Air">Perbaikan Kebocoran Air / Drainase</option>
+                        <option value="Perbaikan Kompresor / Modul">Perbaikan Kompresor / Modul PCB</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Status Akhir Unit AC</label>
+                    <select id="edit_status" class="w-full border rounded-lg px-3 py-2 font-semibold">
+                        <option value="BAIK">BAIK (Dingin Normal)</option>
+                        <option value="Terjadwal">Terjadwal (Belum Dikerjakan)</option>
+                        <option value="Proses">Proses Perbaikan / Menunggu Sparepart</option>
+                        <option value="RUSAK">RUSAK (Unit Mati / Error)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Nama Teknisi / Vendor</label>
+                    <input type="text" id="edit_teknisi" required placeholder="Nama teknisi..." class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Catatan Teknis</label>
+                    <textarea id="edit_catatan" rows="2" class="w-full border rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('serviceModal')" class="px-4 py-2 rounded-lg border">Batal</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Simpan Hasil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allAcRows = [];
+        let currentTab = 'G. UMUM';
+
+        async function fetchAcData() {
+            try {
+                const res = await fetch('/api/maintenance-ac');
+                allAcRows = await res.json();
+                updateStats();
+                if (currentTab === 'MONTHLY') renderMonthlyView();
+                else renderTable();
+            } catch (err) {
+                console.error('Gagal mengambil data AC:', err);
+            }
+        }
+
+        function groupUnits(rows) {
+            const map = {};
+            rows.forEach(r => {
+                if (!map[r.kode_unit]) {
+                    map[r.kode_unit] = { ...r, schedules: [] };
+                }
+                map[r.kode_unit].schedules.push(r);
+            });
+            return Object.values(map).map(u => {
+                u.schedules.sort((a, b) => new Date(a.tgl_servis) - new Date(b.tgl_servis));
+                return u;
+            });
+        }
+
+        function updateStats() {
+            const units = groupUnits(allAcRows);
+            const thisMonth = new Date().toISOString().slice(0, 7);
+
+            let baik = 0, proses = 0, rusak = 0;
+            units.forEach(u => {
+                const latestDone = [...u.schedules].reverse().find(s => s.status !== 'Terjadwal') || u.schedules[0];
+                if (latestDone.status === 'RUSAK') rusak++;
+                else if (latestDone.status === 'Proses') proses++;
+                else baik++;
+            });
+
+            const bulanIni = allAcRows.filter(r => r.tgl_servis && r.tgl_servis.startsWith(thisMonth)).length;
+
+            document.getElementById('statTotalUnit').textContent = units.length;
+            document.getElementById('statBaik').textContent = baik;
+            document.getElementById('statProses').textContent = proses;
+            document.getElementById('statRusak').textContent = rusak;
+            document.getElementById('statBulanIni').textContent = bulanIni;
+        }
+
+        function renderTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allAcRows.filter(r => r.kategori_gedung === currentTab);
+            const units = groupUnits(filtered).filter(u =>
+                `${u.kode_unit} ${u.gedung} ${u.ruang} ${u.merk_ac}`.toLowerCase().includes(query)
+            );
+
+            const tbody = document.getElementById('acTableBody');
+            if (units.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada unit AC terdaftar pada kategori ${currentTab}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = units.map(u => {
+                const boxes = u.schedules.slice(0, 12).map((s, idx) => {
+                    let color = 'bg-slate-100 text-slate-600 border-slate-300';
+                    if (s.status === 'BAIK') color = 'bg-emerald-500 text-white border-emerald-600';
+                    else if (s.status === 'Proses') color = 'bg-amber-500 text-white border-amber-600';
+                    else if (s.status === 'RUSAK') color = 'bg-red-600 text-white border-red-700';
+
+                    return `
+                        <button onclick='openServiceModal(${JSON.stringify(s)})' title="${s.tgl_servis} - ${s.status}"
+                            class="w-12 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center hover:scale-105 transition ${color}">
+                            <span>Cuci ${idx + 1}</span>
+                            <span class="text-[9px] opacity-90">${s.tgl_servis.slice(5)}</span>
+                        </button>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 sticky left-0 bg-white">
+                            <div class="font-bold text-sky-700">${u.kode_unit}</div>
+                            <div class="text-xs font-semibold text-slate-800">${u.gedung || ''} ${u.lantai ? `(${u.lantai})` : ''}</div>
+                            <div class="text-xs text-slate-500">${u.ruang || u.lokasi || ''}</div>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-800">${u.merk_ac || '-'} • ${u.type_ac || 'Split'}</div>
+                            <div class="text-xs text-slate-500">Kapasitas: <b>${u.kapasitas || '-'}</b> | Freon: <b>${u.freon || '-'}</b></div>
+                        </td>
+                        <td class="p-3">
+                            <div class="flex flex-wrap gap-1.5 justify-center">${boxes}</div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="unit-ac.html?kode=${encodeURIComponent(u.kode_unit)}" target="_blank"
+                                    class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs" title="Buka Kartu Kendali QR">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                                <button onclick="deleteUnit('${u.kode_unit}')"
+                                    class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs" title="Hapus Unit AC">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+
+            if (tab === 'MONTHLY') {
+                document.getElementById('matrixView').classList.add('hidden');
+                document.getElementById('monthlyView').classList.remove('hidden');
+                document.getElementById('monthlyFilterBar').classList.remove('hidden');
+                if (!document.getElementById('monthPicker').value) {
+                    document.getElementById('monthPicker').value = new Date().toISOString().slice(0, 7);
+                }
+                renderMonthlyView();
+            } else {
+                document.getElementById('matrixView').classList.remove('hidden');
+                document.getElementById('monthlyView').classList.add('hidden');
+                document.getElementById('monthlyFilterBar').classList.add('hidden');
+                renderTable();
+            }
+        }
+
+        function renderMonthlyView() {
+            const month = document.getElementById('monthPicker').value;
+            const list = allAcRows.filter(r => r.tgl_servis && r.tgl_servis.startsWith(month));
+            const tbody = document.getElementById('monthlyTableBody');
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Tidak ada jadwal maintenance AC pada bulan ${month}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-semibold">${r.tgl_servis}</td>
+                    <td class="p-3 font-bold text-sky-700">${r.kode_unit}</td>
+                    <td class="p-3">${r.gedung} - ${r.ruang || r.lokasi || ''}</td>
+                    <td class="p-3">${r.merk_ac} (${r.kapasitas})</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                            ${r.status} • ${r.jenis_pekerjaan || 'Cuci AC'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick='openServiceModal(${JSON.stringify(r)})' class="px-3 py-1 bg-sky-600 text-white rounded-lg text-xs font-semibold">
+                            Input Hasil
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function submitNewAc(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const jumlah = parseInt(fd.get('jumlah_siklus'), 10);
+            const interval = parseInt(fd.get('interval_bulan'), 10);
+            const startDate = new Date(fd.get('tgl_mulai'));
+            const rowsToInsert = [];
+
+            for (let i = 0; i < jumlah; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + (i * interval));
+                rowsToInsert.push({
+                    kode_unit: fd.get('kode_unit').toUpperCase().trim(),
+                    kategori_gedung: fd.get('kategori_gedung'),
+                    gedung: fd.get('gedung'),
+                    lantai: fd.get('lantai'),
+                    ruang: fd.get('ruang'),
+                    lokasi: `${fd.get('lantai') || ''} - ${fd.get('ruang') || ''}`.trim(),
+                    merk_ac: fd.get('merk_ac'),
+                    type_ac: fd.get('type_ac'),
+                    kapasitas: fd.get('kapasitas'),
+                    freon: fd.get('freon'),
+                    tgl_servis: d.toISOString().split('T')[0],
+                    status: 'Terjadwal',
+                    jenis_pekerjaan: 'Cuci AC Rutin',
+                    catatan: `Cuci ke-${i + 1}/${jumlah}`
+                });
+            }
+
+            await fetch('/api/maintenance-ac/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rowsToInsert)
+            });
+
+            closeModal('addModal');
+            e.target.reset();
+            fetchAcData();
+        }
+
+        function openServiceModal(row) {
+            document.getElementById('edit_id').value = row.id;
+            document.getElementById('edit_title').textContent = `${row.kode_unit} - ${row.gedung}`;
+            document.getElementById('edit_subtitle').textContent = `${row.ruang || row.lokasi || ''} | ${row.merk_ac} (${row.kapasitas})`;
+            document.getElementById('edit_tgl').value = row.tgl_servis;
+            document.getElementById('edit_pekerjaan').value = row.jenis_pekerjaan || 'Cuci AC Rutin';
+            document.getElementById('edit_status').value = row.status === 'Terjadwal' ? 'BAIK' : row.status;
+            document.getElementById('edit_teknisi').value = row.teknisi || '';
+            document.getElementById('edit_catatan').value = row.catatan || '';
+            document.getElementById('serviceModal').classList.remove('hidden');
+            document.getElementById('serviceModal').classList.add('flex');
+        }
+
+        async function submitServiceUpdate(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const payload = {
+                tgl_servis: document.getElementById('edit_tgl').value,
+                jenis_pekerjaan: document.getElementById('edit_pekerjaan').value,
+                status: document.getElementById('edit_status').value,
+                teknisi: document.getElementById('edit_teknisi').value,
+                catatan: document.getElementById('edit_catatan').value
+            };
+
+            await fetch(`/api/maintenance-ac/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            closeModal('serviceModal');
+            fetchAcData();
+        }
+
+        async function deleteUnit(kodeUnit) {
+            if (!confirm(`Hapus unit ${kodeUnit} beserta seluruh jadwal servisnya?`)) return;
+            const rows = allAcRows.filter(r => r.kode_unit === kodeUnit);
+            for (const r of rows) {
+                await fetch(`/api/maintenance-ac/${r.id}`, { method: 'DELETE' });
+            }
+            fetchAcData();
+        }
+
+        function printAllQR() {
+            const units = groupUnits(allAcRows.filter(r => r.kategori_gedung === currentTab));
+            const area = document.getElementById('qrPrintArea');
+            area.innerHTML = '';
+
+            units.forEach((u, idx) => {
+                const card = document.createElement('div');
+                card.className = 'border-2 border-sky-700 rounded-xl p-4 text-center flex flex-col items-center';
+                card.innerHTML = `
+                    <div class="text-xs font-extrabold text-sky-800 uppercase tracking-wider">KARTU KENDALI UNIT AC</div>
+                    <div id="qr-ac-${idx}" class="my-2"></div>
+                    <div class="font-black text-base text-slate-900">${u.kode_unit}</div>
+                    <div class="text-xs font-semibold text-slate-700">${u.gedung} - ${u.ruang || ''}</div>
+                    <div class="text-[11px] text-slate-500 mt-1">${u.merk_ac} (${u.kapasitas}) | Freon ${u.freon}</div>
+                `;
+                area.appendChild(card);
+
+                const scanUrl = `${window.location.origin}/unit-ac.html?kode=${encodeURIComponent(u.kode_unit)}`;
+                new QRCode(document.getElementById(`qr-ac-${idx}`), { text: scanUrl, width: 110, height: 110 });
+            });
+
+            setTimeout(() => window.print(), 400);
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            document.getElementById('addModal').classList.add('flex');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        fetchAcData();
+    </script>
+</body>
+</html>

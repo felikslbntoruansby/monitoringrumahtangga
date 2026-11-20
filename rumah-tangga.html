@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layanan Rumah Tangga - Poltekbang Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen">
+
+    <!-- NAVBAR TERPADU -->
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2.5 rounded-xl shadow-md">
+                    <i class="fas fa-building-user text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-blue-400 block">BIDANG UMUM • POLTEKBANG SBY</span>
+                    <h1 class="font-extrabold text-base md:text-lg leading-tight">Layanan Subbag Rumah Tangga</h1>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <a href="rumahtangga.html" class="px-3 py-2 rounded-xl bg-blue-600 text-white shadow-sm">
+                    <i class="fas fa-calendar-check mr-1"></i> Ruangan & Kendaraan
+                </a>
+                <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+                    <i class="fas fa-boxes-stacked mr-1 text-indigo-400"></i> Inventaris
+                </a>
+                <a href="ac.html" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+                    <i class="fas fa-snowflake mr-1 text-cyan-400"></i> Unit AC
+                </a>
+                <a href="apar.html" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+                    <i class="fas fa-fire-extinguisher mr-1 text-red-400"></i> APAR
+                </a>
+                <button onclick="toggleAdminPin()" id="btnAdminStatus" class="px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition">
+                    <i class="fas fa-lock mr-1"></i> Mode Admin
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- KPI RINGKASAN -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold text-slate-500 uppercase">Booking Ruangan</p>
+                <p id="kpiRuanganTotal" class="text-2xl font-black text-blue-600 mt-1">0</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Total Pengajuan Tercatat</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold text-slate-500 uppercase">Ruangan Aktif Hari Ini</p>
+                <p id="kpiRuanganToday" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+                <p class="text-[11px] text-emerald-600 mt-0.5">Jadwal Berlangsung</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold text-slate-500 uppercase">Booking Kendaraan</p>
+                <p id="kpiKendaraanTotal" class="text-2xl font-black text-indigo-600 mt-1">0</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Total Perjalanan Dinas</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-bold text-slate-500 uppercase">Kendaraan Berangkat Hari Ini</p>
+                <p id="kpiKendaraanToday" class="text-2xl font-black text-amber-600 mt-1">0</p>
+                <p class="text-[11px] text-amber-600 mt-0.5">Unit Sedang Bertugas</p>
+            </div>
+        </div>
+
+        <!-- SWITCHER TAB MODUL -->
+        <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex gap-2">
+            <button onclick="switchMainTab('RUANGAN')" id="tabBtn-RUANGAN" class="flex-1 py-3 px-4 rounded-xl bg-blue-600 text-white font-bold text-sm transition flex items-center justify-center gap-2">
+                <i class="fas fa-door-open"></i> 1. Peminjaman Ruangan & Aula
+            </button>
+            <button onclick="switchMainTab('KENDARAAN')" id="tabBtn-KENDARAAN" class="flex-1 py-3 px-4 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm transition flex items-center justify-center gap-2">
+                <i class="fas fa-car-side"></i> 2. Peminjaman Kendaraan Dinas
+            </button>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SECTION 1: PEMINJAMAN RUANGAN                             -->
+        <!-- ========================================================= -->
+        <div id="section-RUANGAN" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Form Booking Ruangan -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                <h2 class="font-extrabold text-base text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
+                    <i class="fas fa-calendar-plus text-blue-600"></i> Form Booking Ruangan
+                </h2>
+                <form id="formRuangan" onsubmit="submitRuangan(event)" class="space-y-3.5 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nama Peminjam / Unit Kerja *</label>
+                        <input type="text" id="r_nama" required placeholder="Contoh: Prodi TPU / Bagian Akademik" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Pilih Ruangan *</label>
+                        <select id="r_ruangan" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white font-semibold">
+                            <option value="Auditorium Utama">Auditorium Utama</option>
+                            <option value="Gedung Serba Guna (GSG)">Gedung Serba Guna (GSG)</option>
+                            <option value="Ruang Rapat VIP Gedung Rektorat">Ruang Rapat VIP Gedung Rektorat</option>
+                            <option value="Ruang Rapat Lt. 2 Umum">Ruang Rapat Lt. 2 Umum</option>
+                            <option value="Aula Asrama Taruna">Aula Asrama Taruna</option>
+                            <option value="Ruang Kelas / Lab Umum">Ruang Kelas / Lab Umum</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Tanggal Mulai *</label>
+                            <input type="date" id="r_tgl_mulai" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Tanggal Selesai</label>
+                            <input type="date" id="r_tgl_selesai" class="w-full border border-slate-300 rounded-xl px-3 py-2">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Waktu / Jam Pelaksanaan *</label>
+                        <input type="text" id="r_jam" required placeholder="Contoh: 08.00 - 15.00 WIB" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Keperluan Kegiatan *</label>
+                        <textarea id="r_keperluan" rows="2" required placeholder="Contoh: Rapat Koordinasi & Evaluasi Semester" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition">
+                        <i class="fas fa-paper-plane mr-1"></i> Ajukan Peminjaman Ruangan
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tabel Jadwal Ruangan -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                    <h3 class="font-extrabold text-sm text-slate-800">Daftar Jadwal Peminjaman Ruangan</h3>
+                    <input type="text" id="searchRuangan" onkeyup="renderRuanganTable()" placeholder="Cari ruangan / peminjam..." class="border border-slate-300 rounded-xl px-3 py-1.5 text-xs bg-white w-full sm:w-56">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-bold border-b">
+                            <tr>
+                                <th class="p-3">Tanggal & Jam</th>
+                                <th class="p-3">Ruangan</th>
+                                <th class="p-3">Peminjam & Kegiatan</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyRuangan" class="divide-y divide-slate-200">
+                            <tr><td colspan="5" class="p-6 text-center text-slate-400">Memuat jadwal ruangan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SECTION 2: PEMINJAMAN KENDARAAN DINAS                     -->
+        <!-- ========================================================= -->
+        <div id="section-KENDARAAN" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Form Booking Kendaraan -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                <h2 class="font-extrabold text-base text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
+                    <i class="fas fa-car text-indigo-600"></i> Form Booking Kendaraan Dinas
+                </h2>
+                <form id="formKendaraan" onsubmit="submitKendaraan(event)" class="space-y-3.5 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nama Pemohon / Driver *</label>
+                        <input type="text" id="k_driver" required placeholder="Contoh: Pak Slamet / Unit Humas" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Pilih Unit Kendaraan *</label>
+                        <select id="k_unit" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-white font-semibold">
+                            <option value="Toyota Hiace Commuter (L 7012 AP)">Toyota Hiace Commuter (L 7012 AP)</option>
+                            <option value="Toyota Kijang Innova Reborn (L 1420 BP)">Toyota Kijang Innova Reborn (L 1420 BP)</option>
+                            <option value="Toyota Avanza Veloz (L 1889 CP)">Toyota Avanza Veloz (L 1889 CP)</option>
+                            <option value="Bus Kampus Poltekbang (L 7501 UP)">Bus Kampus Poltekbang (L 7501 UP)</option>
+                            <option value="Pickup Operasional Sarpras (L 8122 DP)">Pickup Operasional Sarpras (L 8122 DP)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tanggal Penggunaan *</label>
+                        <input type="date" id="k_tgl" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tujuan & Keperluan Dinas *</label>
+                        <textarea id="k_tujuan" rows="3" required placeholder="Contoh: Bandara Juanda T1 - Penjemputan Tamu Narasumber" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition">
+                        <i class="fas fa-paper-plane mr-1"></i> Ajukan Peminjaman Kendaraan
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tabel Jadwal Kendaraan -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                    <h3 class="font-extrabold text-sm text-slate-800">Daftar Jadwal Penggunaan Kendaraan</h3>
+                    <input type="text" id="searchKendaraan" onkeyup="renderKendaraanTable()" placeholder="Cari kendaraan / tujuan..." class="border border-slate-300 rounded-xl px-3 py-1.5 text-xs bg-white w-full sm:w-56">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-bold border-b">
+                            <tr>
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">Unit Kendaraan</th>
+                                <th class="p-3">Pemohon / Driver & Tujuan</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyKendaraan" class="divide-y divide-slate-200">
+                            <tr><td colspan="5" class="p-6 text-center text-slate-400">Memuat jadwal kendaraan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let listRuangan = [];
+        let listKendaraan = [];
+        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+
+        function updateAdminBadge() {
+            const btn = document.getElementById('btnAdminStatus');
+            if (isAdmin) {
+                btn.className = "px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold transition";
+                btn.innerHTML = `<i class="fas fa-unlock mr-1"></i> Admin Aktif`;
+            } else {
+                btn.className = "px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition";
+                btn.innerHTML = `<i class="fas fa-lock mr-1"></i> Mode Admin`;
+            }
+        }
+
+        async function toggleAdminPin() {
+            if (isAdmin) {
+                if (confirm('Keluar dari Mode Admin?')) {
+                    isAdmin = false;
+                    sessionStorage.removeItem('rt_admin');
+                    updateAdminBadge();
+                    renderRuanganTable();
+                    renderKendaraanTable();
+                }
+                return;
+            }
+            const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
+            if (!pin) return;
+
+            const res = await fetch('/api/verify-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin })
+            });
+            if (res.ok) {
+                isAdmin = true;
+                sessionStorage.setItem('rt_admin', '1');
+                updateAdminBadge();
+                renderRuanganTable();
+                renderKendaraanTable();
+                alert('Verifikasi PIN berhasil! Tombol kelola admin aktif.');
+            } else {
+                alert('PIN Admin salah!');
+            }
+        }
+
+        function switchMainTab(tab) {
+            if (tab === 'RUANGAN') {
+                document.getElementById('section-RUANGAN').classList.remove('hidden');
+                document.getElementById('section-KENDARAAN').classList.add('hidden');
+                document.getElementById('tabBtn-RUANGAN').className = "flex-1 py-3 px-4 rounded-xl bg-blue-600 text-white font-bold text-sm transition flex items-center justify-center gap-2";
+                document.getElementById('tabBtn-KENDARAAN').className = "flex-1 py-3 px-4 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm transition flex items-center justify-center gap-2";
+            } else {
+                document.getElementById('section-RUANGAN').classList.add('hidden');
+                document.getElementById('section-KENDARAAN').classList.remove('hidden');
+                document.getElementById('tabBtn-KENDARAAN').className = "flex-1 py-3 px-4 rounded-xl bg-indigo-600 text-white font-bold text-sm transition flex items-center justify-center gap-2";
+                document.getElementById('tabBtn-RUANGAN').className = "flex-1 py-3 px-4 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm transition flex items-center justify-center gap-2";
+            }
+        }
+
+        async function loadAllData() {
+            const [resR, resK] = await Promise.all([
+                fetch('/api/peminjaman-ruangan'),
+                fetch('/api/peminjaman-kendaraan')
+            ]);
+            listRuangan = await resR.json();
+            listKendaraan = await resK.json();
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('kpiRuanganTotal').textContent = listRuangan.length;
+            document.getElementById('kpiRuanganToday').textContent = listRuangan.filter(r => r.tgl_pinjam === today && r.status !== 'Ditolak').length;
+            document.getElementById('kpiKendaraanTotal').textContent = listKendaraan.length;
+            document.getElementById('kpiKendaraanToday').textContent = listKendaraan.filter(k => k.tgl_pinjam === today && k.status !== 'Ditolak').length;
+
+            renderRuanganTable();
+            renderKendaraanTable();
+        }
+
+        function renderRuanganTable() {
+            const q = document.getElementById('searchRuangan').value.toLowerCase();
+            const filtered = listRuangan.filter(r =>
+                `${r.ruangan} ${r.nama_peminjam} ${r.keperluan}`.toLowerCase().includes(q)
+            );
+            const tbody = document.getElementById('tbodyRuangan');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada data booking ruangan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => {
+                let badge = 'bg-emerald-100 text-emerald-700';
+                if (r.status === 'Menunggu') badge = 'bg-amber-100 text-amber-700';
+                if (r.status === 'Ditolak') badge = 'bg-red-100 text-red-700';
+
+                const adminBtns = isAdmin ? `
+                    <div class="flex justify-center gap-1">
+                        <button onclick="updateStatus('peminjaman-ruangan', ${r.id}, 'Disetujui')" class="px-2 py-1 bg-emerald-600 text-white rounded text-[10px]" title="Setujui"><i class="fas fa-check"></i></button>
+                        <button onclick="updateStatus('peminjaman-ruangan', ${r.id}, 'Ditolak')" class="px-2 py-1 bg-amber-500 text-white rounded text-[10px]" title="Tolak"><i class="fas fa-ban"></i></button>
+                        <button onclick="deleteRow('peminjaman-ruangan', ${r.id})" class="px-2 py-1 bg-red-600 text-white rounded text-[10px]" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>
+                ` : `<span class="text-[10px] text-slate-400">Terkunci</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3">
+                            <div class="font-bold text-slate-800">${r.tgl_pinjam}</div>
+                            <div class="text-[11px] text-blue-600 font-semibold">${r.jam_mulai || '-'}</div>
+                        </td>
+                        <td class="p-3 font-bold text-slate-900">${r.ruangan}</td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-800">${r.nama_peminjam}</div>
+                            <div class="text-[11px] text-slate-500">${r.keperluan || '-'}</div>
+                        </td>
+                        <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badge}">${r.status}</span></td>
+                        <td class="p-3 text-center">${adminBtns}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderKendaraanTable() {
+            const q = document.getElementById('searchKendaraan').value.toLowerCase();
+            const filtered = listKendaraan.filter(k =>
+                `${k.kendaraan} ${k.nama_driver} ${k.tujuan}`.toLowerCase().includes(q)
+            );
+            const tbody = document.getElementById('tbodyKendaraan');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada data booking kendaraan.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(k => {
+                let badge = 'bg-emerald-100 text-emerald-700';
+                if (k.status === 'Menunggu') badge = 'bg-amber-100 text-amber-700';
+                if (k.status === 'Ditolak') badge = 'bg-red-100 text-red-700';
+
+                const adminBtns = isAdmin ? `
+                    <div class="flex justify-center gap-1">
+                        <button onclick="updateStatus('peminjaman-kendaraan', ${k.id}, 'Disetujui')" class="px-2 py-1 bg-emerald-600 text-white rounded text-[10px]"><i class="fas fa-check"></i></button>
+                        <button onclick="updateStatus('peminjaman-kendaraan', ${k.id}, 'Selesai')" class="px-2 py-1 bg-blue-600 text-white rounded text-[10px]">Selesai</button>
+                        <button onclick="deleteRow('peminjaman-kendaraan', ${k.id})" class="px-2 py-1 bg-red-600 text-white rounded text-[10px]"><i class="fas fa-trash"></i></button>
+                    </div>
+                ` : `<span class="text-[10px] text-slate-400">Terkunci</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-800">${k.tgl_pinjam}</td>
+                        <td class="p-3 font-bold text-indigo-700">${k.kendaraan}</td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-800">${k.nama_driver}</div>
+                            <div class="text-[11px] text-slate-500">${k.tujuan || '-'}</div>
+                        </td>
+                        <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badge}">${k.status}</span></td>
+                        <td class="p-3 text-center">${adminBtns}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function submitRuangan(e) {
+            e.preventDefault();
+            const ruangan = document.getElementById('r_ruangan').value;
+            const tgl_pinjam = document.getElementById('r_tgl_mulai').value;
+
+            // Cek bentrok tanggal & ruangan yang sama
+            const bentrok = listRuangan.find(r => r.ruangan === ruangan && r.tgl_pinjam === tgl_pinjam && r.status !== 'Ditolak');
+            if (bentrok && !confirm(`Peringatan: ${ruangan} sudah dibooking pada ${tgl_pinjam} (${bentrok.jam_mulai}) oleh ${bentrok.nama_peminjam}. Tetap ajukan?`)) {
+                return;
+            }
+
+            await fetch('/api/peminjaman-ruangan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nama_peminjam: document.getElementById('r_nama').value,
+                    ruangan,
+                    tgl_pinjam,
+                    tgl_selesai: document.getElementById('r_tgl_selesai').value || tgl_pinjam,
+                    jam_mulai: document.getElementById('r_jam').value,
+                    keperluan: document.getElementById('r_keperluan').value,
+                    status: 'Disetujui'
+                })
+            });
+
+            e.target.reset();
+            loadAllData();
+        }
+
+        async function submitKendaraan(e) {
+            e.preventDefault();
+            const kendaraan = document.getElementById('k_unit').value;
+            const tgl_pinjam = document.getElementById('k_tgl').value;
+
+            const bentrok = listKendaraan.find(k => k.kendaraan === kendaraan && k.tgl_pinjam === tgl_pinjam && k.status !== 'Ditolak');
+            if (bentrok && !confirm(`Peringatan: ${kendaraan} sudah terjadwal pada ${tgl_pinjam} (${bentrok.tujuan}). Tetap ajukan?`)) {
+                return;
+            }
+
+            await fetch('/api/peminjaman-kendaraan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nama_driver: document.getElementById('k_driver').value,
+                    kendaraan,
+                    tgl_pinjam,
+                    tujuan: document.getElementById('k_tujuan').value,
+                    status: 'Disetujui'
+                })
+            });
+
+            e.target.reset();
+            loadAllData();
+        }
+
+        async function updateStatus(endpoint, id, status) {
+            await fetch(`/api/${endpoint}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            loadAllData();
+        }
+
+        async function deleteRow(endpoint, id) {
+            if (!confirm('Hapus jadwal ini?')) return;
+            await fetch(`/api/${endpoint}/${id}`, { method: 'DELETE' });
+            loadAllData();
+        }
+
+        updateAdminBadge();
+        loadAllData();
+    </script>
+</body>
+</html>

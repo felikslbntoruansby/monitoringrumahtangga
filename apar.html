@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen & Inspeksi APAR - Rumah Tangga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #dc2626; color: #dc2626; font-weight: 700; }
+        @media print {
+            .no-print { display: none !important; }
+            #qrPrintArea { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- NAVBAR -->
+    <nav class="bg-red-700 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <i class="fas fa-fire-extinguisher text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Monitoring & Inspeksi APAR</h1>
+                    <p class="text-xs text-red-100">Sistem Manajemen Pemeliharaan Alat Pemadam Api Ringan</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <a href="rumahtangga.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
+                    <i class="fas fa-home mr-1"></i> Dashboard
+                </a>
+                <a href="ac.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
+                    <i class="fas fa-snowflake mr-1"></i> Unit AC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- KONTEN UTAMA -->
+    <main class="max-w-7xl mx-auto px-4 py-6 no-print">
+        
+        <!-- RINGKASAN STATISTIK -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold uppercase">Total Unit APAR</p>
+                <p id="statTotalUnit" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
+                <p class="text-xs text-emerald-600 font-semibold uppercase">Kondisi Baik</p>
+                <p id="statBaik" class="text-2xl font-extrabold text-emerald-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200">
+                <p class="text-xs text-amber-600 font-semibold uppercase">Perlu Refill / Expired</p>
+                <p id="statRefill" class="text-2xl font-extrabold text-amber-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-red-200">
+                <p class="text-xs text-red-600 font-semibold uppercase">Rusak / Tekanan Drop</p>
+                <p id="statRusak" class="text-2xl font-extrabold text-red-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-200 col-span-2 md:col-span-1">
+                <p class="text-xs text-blue-600 font-semibold uppercase">Jadwal Bulan Ini</p>
+                <p id="statBulanIni" class="text-2xl font-extrabold text-blue-600 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- TOOLBAR AKSI & PENCARIAN -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openAddModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Tambah Unit & Jadwal APAR
+                </button>
+                <button onclick="printAllQR()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                    <i class="fas fa-qrcode"></i> Cetak Semua Stiker QR
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div class="relative flex-1 md:w-64">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode, gedung, merk..." 
+                        class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB KATEGORI GEDUNG -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2">
+                <button onclick="switchTab('G. UMUM')" id="tab-G. UMUM" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap tab-active">G. UMUM</button>
+                <button onclick="switchTab('G. LAB')" id="tab-G. LAB" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. LAB</button>
+                <button onclick="switchTab('G. ASRAMA')" id="tab-G. ASRAMA" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. ASRAMA</button>
+                <button onclick="switchTab('G. TPU')" id="tab-G. TPU" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. TPU</button>
+                <button onclick="switchTab('MONTHLY')" id="tab-MONTHLY" class="tab-btn px-5 py-3.5 text-sm font-medium text-blue-600 whitespace-nowrap">
+                    <i class="fas fa-calendar-alt mr-1"></i> JADWAL BULANAN
+                </button>
+            </div>
+
+            <!-- FILTER BULAN (KHUSUS TAB MONTHLY) -->
+            <div id="monthlyFilterBar" class="hidden p-4 bg-blue-50/60 border-b border-slate-200 flex items-center gap-3">
+                <label class="text-sm font-semibold text-slate-700">Pilih Bulan Inspeksi:</label>
+                <input type="month" id="monthPicker" onchange="renderMonthlyView()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white">
+            </div>
+
+            <!-- TABEL MATRIKS UNIT APAR (Cek 1 - Cek 12) -->
+            <div id="matrixView" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                            <th class="p-3 font-bold sticky left-0 bg-slate-100 z-10">Kode & Lokasi APAR</th>
+                            <th class="p-3 font-bold">Spesifikasi & Expired</th>
+                            <th class="p-3 font-bold text-center">Matriks Inspeksi Rutin (Bulan ke-1 s/d 12)</th>
+                            <th class="p-3 font-bold text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aparTableBody" class="divide-y divide-slate-200 text-sm">
+                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat data APAR...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TABEL JADWAL BULANAN -->
+            <div id="monthlyView" class="hidden overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                            <th class="p-3 font-bold">Tanggal Jadwal</th>
+                            <th class="p-3 font-bold">Kode APAR</th>
+                            <th class="p-3 font-bold">Gedung / Titik Lokasi</th>
+                            <th class="p-3 font-bold">Media & Kapasitas</th>
+                            <th class="p-3 font-bold">Tekanan & Status</th>
+                            <th class="p-3 font-bold text-center">Update</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- AREA PRINT STIKER QR (HANYA MUNCUL SAAT PRINT) -->
+    <div id="qrPrintArea" class="hidden p-6"></div>
+
+    <!-- MODAL TAMBAH UNIT APAR + GENERATE 12 JADWAL BULANAN -->
+    <div id="addModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fas fa-fire-extinguisher text-red-600 mr-2"></i>Tambah Unit APAR Baru</h3>
+                <button onclick="closeModal('addModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <form id="addAparForm" onsubmit="submitNewApar(event)" class="space-y-4 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold mb-1">Kode APAR *</label>
+                        <input type="text" name="kode_apar" required placeholder="Contoh: APAR-UM-001" class="w-full border rounded-lg px-3 py-2 uppercase">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Kategori Gedung *</label>
+                        <select name="kategori_gedung" required class="w-full border rounded-lg px-3 py-2">
+                            <option value="G. UMUM">G. UMUM</option>
+                            <option value="G. LAB">G. LAB</option>
+                            <option value="G. ASRAMA">G. ASRAMA</option>
+                            <option value="G. TPU">G. TPU</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Nama Gedung *</label>
+                        <input type="text" name="gedung" required placeholder="Contoh: Gedung Rektorat" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Lantai & Ruang / Titik Lokasi *</label>
+                        <input type="text" name="titik_lokasi" required placeholder="Contoh: Lt. 1 - Depan Lift Utama" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Merk Tabung</label>
+                        <input type="text" name="merk" placeholder="Servvo / Yamato / GuardALL" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Jenis Media Pemadam *</label>
+                        <select name="jenis_media" required class="w-full border rounded-lg px-3 py-2">
+                            <option value="Powder / ABC">Powder / ABC (Dry Chemical)</option>
+                            <option value="CO2">CO2 (Karbon Dioksida)</option>
+                            <option value="Foam">Foam (Busa)</option>
+                            <option value="Clean Agent">Clean Agent (AF11 / HFC-227ea)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Kapasitas Berat *</label>
+                        <input type="text" name="kapasitas" required placeholder="Contoh: 3 Kg / 6 Kg / 9 Kg" class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Tanggal Kadaluarsa / Wajib Refill *</label>
+                        <input type="date" name="tgl_kadaluarsa" required class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                </div>
+
+                <div class="bg-red-50 p-3.5 rounded-xl border border-red-100">
+                    <p class="font-semibold text-red-800 mb-2"><i class="fas fa-calendar-check mr-1"></i> Generator Jadwal Inspeksi Rutin</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Mulai Inspeksi Pertama *</label>
+                            <input type="date" name="tgl_mulai" required class="w-full border rounded-lg px-3 py-1.5 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Siklus Jadwal</label>
+                            <select name="jumlah_siklus" class="w-full border rounded-lg px-3 py-1.5 bg-white">
+                                <option value="12">12 Bulan (1x Sebulan selama 1 Tahun)</option>
+                                <option value="6">6 Bulan (Semester)</option>
+                                <option value="1">1 Kali Saja</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('addModal')" class="px-4 py-2 rounded-lg border text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold">Simpan & Generate Jadwal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL UPDATE HASIL INSPEKSI -->
+    <div id="inspectModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Update Hasil Inspeksi APAR</h3>
+                <button onclick="closeModal('inspectModal')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="inspectForm" onsubmit="submitInspection(event)" class="space-y-3 text-sm">
+                <input type="hidden" id="edit_id">
+                <div class="bg-slate-50 p-3 rounded-lg border">
+                    <p id="edit_title" class="font-bold text-slate-800"></p>
+                    <p id="edit_subtitle" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Tanggal Pelaksanaan Inspeksi</label>
+                    <input type="date" id="edit_tgl" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Jarum Tekanan (Pressure Gauge)</label>
+                    <select id="edit_tekanan" class="w-full border rounded-lg px-3 py-2">
+                        <option value="Normal / Hijau">Normal / Hijau (Siap Pakai)</option>
+                        <option value="Kurang / Merah">Kurang / Merah (Tekanan Drop)</option>
+                        <option value="Overcharge">Overcharge (Berlebih)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Kondisi Fisik (Segel, Selang, Tabung)</label>
+                    <input type="text" id="edit_fisik" value="Segel Utuh, Selang Baik, Tabung Dibalik" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Status Akhir APAR</label>
+                    <select id="edit_status" class="w-full border rounded-lg px-3 py-2 font-semibold">
+                        <option value="BAIK">BAIK (Lolos Inspeksi)</option>
+                        <option value="Terjadwal">Terjadwal (Belum Dicek)</option>
+                        <option value="PERLU REFILL">PERLU REFILL (Isi Ulang)</option>
+                        <option value="RUSAK">RUSAK (Perlu Perbaikan / Ganti)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Nama Petugas K3 / Pemeriksa</label>
+                    <input type="text" id="edit_petugas" required placeholder="Nama petugas..." class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Catatan Temuan</label>
+                    <textarea id="edit_catatan" rows="2" class="w-full border rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('inspectModal')" class="px-4 py-2 rounded-lg border">Batal</button>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">Simpan Hasil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allAparRows = [];
+        let currentTab = 'G. UMUM';
+
+        // 1. FETCH DATA DARI BACKEND
+        async function fetchAparData() {
+            try {
+                const res = await fetch('/api/apar');
+                allAparRows = await res.json();
+                updateStats();
+                if (currentTab === 'MONTHLY') renderMonthlyView();
+                else renderTable();
+            } catch (err) {
+                console.error('Gagal mengambil data APAR:', err);
+            }
+        }
+
+        // 2. KELOMPOKKAN BARIS JADWAL MENJADI UNIT UNIK (MATRIKS 12 BULAN)
+        function groupUnits(rows) {
+            const map = {};
+            rows.forEach(r => {
+                if (!map[r.kode_apar]) {
+                    map[r.kode_apar] = {
+                        ...r,
+                        schedules: []
+                    };
+                }
+                map[r.kode_apar].schedules.push(r);
+            });
+            return Object.values(map).map(u => {
+                u.schedules.sort((a, b) => new Date(a.tgl_inspeksi) - new Date(b.tgl_inspeksi));
+                return u;
+            });
+        }
+
+        // 3. HITUNG STATISTIK DASHBOARD
+        function updateStats() {
+            const units = groupUnits(allAparRows);
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = today.slice(0, 7);
+
+            let baik = 0, refill = 0, rusak = 0;
+            units.forEach(u => {
+                const latest = u.schedules[u.schedules.length - 1];
+                const isExpired = u.tgl_kadaluarsa && u.tgl_kadaluarsa < today;
+                if (latest.status === 'RUSAK') rusak++;
+                else if (latest.status === 'PERLU REFILL' || isExpired) refill++;
+                else baik++;
+            });
+
+            const bulanIni = allAparRows.filter(r => r.tgl_inspeksi && r.tgl_inspeksi.startsWith(thisMonth)).length;
+
+            document.getElementById('statTotalUnit').textContent = units.length;
+            document.getElementById('statBaik').textContent = baik;
+            document.getElementById('statRefill').textContent = refill;
+            document.getElementById('statRusak').textContent = rusak;
+            document.getElementById('statBulanIni').textContent = bulanIni;
+        }
+
+        // 4. RENDER TABEL MATRIKS PER GEDUNG
+        function renderTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filteredRows = allAparRows.filter(r => r.kategori_gedung === currentTab);
+            const units = groupUnits(filteredRows).filter(u =>
+                u.kode_apar.toLowerCase().includes(query) ||
+                (u.gedung || '').toLowerCase().includes(query) ||
+                (u.titik_lokasi || '').toLowerCase().includes(query) ||
+                (u.merk || '').toLowerCase().includes(query)
+            );
+
+            const tbody = document.getElementById('aparTableBody');
+            if (units.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada data unit APAR di kategori ${currentTab}.</td></tr>`;
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            tbody.innerHTML = units.map(u => {
+                const isExpired = u.tgl_kadaluarsa && u.tgl_kadaluarsa < today;
+                const expBadge = isExpired
+                    ? `<span class="bg-red-100 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded">EXPIRED: ${u.tgl_kadaluarsa}</span>`
+                    : `<span class="bg-slate-100 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded">Exp: ${u.tgl_kadaluarsa || '-'}</span>`;
+
+                const boxes = u.schedules.slice(0, 12).map((s, idx) => {
+                    let color = 'bg-slate-100 text-slate-600 border-slate-300';
+                    if (s.status === 'BAIK') color = 'bg-emerald-500 text-white border-emerald-600';
+                    else if (s.status === 'PERLU REFILL') color = 'bg-amber-500 text-white border-amber-600';
+                    else if (s.status === 'RUSAK') color = 'bg-red-600 text-white border-red-700';
+
+                    return `
+                        <button onclick='openInspectModal(${JSON.stringify(s)})' title="${s.tgl_inspeksi} - ${s.status}"
+                            class="w-11 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center hover:scale-105 transition ${color}">
+                            <span>Cek ${idx + 1}</span>
+                            <span class="text-[9px] opacity-90">${s.tgl_inspeksi.slice(5)}</span>
+                        </button>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 sticky left-0 bg-white">
+                            <div class="font-bold text-red-700">${u.kode_apar}</div>
+                            <div class="text-xs font-semibold text-slate-700">${u.gedung || ''}</div>
+                            <div class="text-xs text-slate-500">${u.titik_lokasi || ''}</div>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-800">${u.jenis_media} (${u.kapasitas})</div>
+                            <div class="text-xs text-slate-500 mb-1">Merk: ${u.merk || '-'}</div>
+                            ${expBadge}
+                        </td>
+                        <td class="p-3">
+                            <div class="flex flex-wrap gap-1.5 justify-center">${boxes}</div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="unit-apar.html?kode=${encodeURIComponent(u.kode_apar)}" target="_blank"
+                                    class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs" title="Buka Kartu Kendali QR">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                                <button onclick="deleteUnit('${u.kode_apar}')"
+                                    class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs" title="Hapus Unit">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 5. SWITCH TAB & JADWAL BULANAN
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+
+            if (tab === 'MONTHLY') {
+                document.getElementById('matrixView').classList.add('hidden');
+                document.getElementById('monthlyView').classList.remove('hidden');
+                document.getElementById('monthlyFilterBar').classList.remove('hidden');
+                if (!document.getElementById('monthPicker').value) {
+                    document.getElementById('monthPicker').value = new Date().toISOString().slice(0, 7);
+                }
+                renderMonthlyView();
+            } else {
+                document.getElementById('matrixView').classList.remove('hidden');
+                document.getElementById('monthlyView').classList.add('hidden');
+                document.getElementById('monthlyFilterBar').classList.add('hidden');
+                renderTable();
+            }
+        }
+
+        function renderMonthlyView() {
+            const month = document.getElementById('monthPicker').value;
+            const list = allAparRows.filter(r => r.tgl_inspeksi && r.tgl_inspeksi.startsWith(month));
+            const tbody = document.getElementById('monthlyTableBody');
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Tidak ada jadwal inspeksi APAR pada bulan ${month}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-semibold">${r.tgl_inspeksi}</td>
+                    <td class="p-3 font-bold text-red-700">${r.kode_apar}</td>
+                    <td class="p-3">${r.gedung} - ${r.titik_lokasi}</td>
+                    <td class="p-3">${r.jenis_media} (${r.kapasitas})</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                            ${r.status} (${r.tekanan_bar || 'Normal'})
+                        </span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick='openInspectModal(${JSON.stringify(r)})' class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+                            Cek Sekarang
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 6. SUBMIT TAMBAH UNIT + GENERATE 12 JADWAL OTOMATIS
+        async function submitNewApar(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const jumlah = parseInt(fd.get('jumlah_siklus'), 10);
+            const startDate = new Date(fd.get('tgl_mulai'));
+            const rowsToInsert = [];
+
+            for (let i = 0; i < jumlah; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i);
+                rowsToInsert.push({
+                    kode_apar: fd.get('kode_apar').toUpperCase().trim(),
+                    kategori_gedung: fd.get('kategori_gedung'),
+                    gedung: fd.get('gedung'),
+                    titik_lokasi: fd.get('titik_lokasi'),
+                    merk: fd.get('merk'),
+                    jenis_media: fd.get('jenis_media'),
+                    kapasitas: fd.get('kapasitas'),
+                    tgl_kadaluarsa: fd.get('tgl_kadaluarsa'),
+                    tgl_inspeksi: d.toISOString().split('T')[0],
+                    status: 'Terjadwal',
+                    catatan: `Inspeksi ke-${i + 1}/${jumlah}`
+                });
+            }
+
+            await fetch('/api/apar/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rowsToInsert)
+            });
+
+            closeModal('addModal');
+            e.target.reset();
+            fetchAparData();
+        }
+
+        // 7. UPDATE HASIL INSPEKSI
+        function openInspectModal(row) {
+            document.getElementById('edit_id').value = row.id;
+            document.getElementById('edit_title').textContent = `${row.kode_apar} - ${row.gedung}`;
+            document.getElementById('edit_subtitle').textContent = `${row.titik_lokasi} | ${row.jenis_media} (${row.kapasitas})`;
+            document.getElementById('edit_tgl').value = row.tgl_inspeksi;
+            document.getElementById('edit_tekanan').value = row.tekanan_bar || 'Normal / Hijau';
+            document.getElementById('edit_fisik').value = row.kondisi_fisik || 'Segel Utuh, Selang Baik, Tabung Dibalik';
+            document.getElementById('edit_status').value = row.status === 'Terjadwal' ? 'BAIK' : row.status;
+            document.getElementById('edit_petugas').value = row.petugas || '';
+            document.getElementById('edit_catatan').value = row.catatan || '';
+            document.getElementById('inspectModal').classList.remove('hidden');
+            document.getElementById('inspectModal').classList.add('flex');
+        }
+
+        async function submitInspection(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const payload = {
+                tgl_inspeksi: document.getElementById('edit_tgl').value,
+                tekanan_bar: document.getElementById('edit_tekanan').value,
+                kondisi_fisik: document.getElementById('edit_fisik').value,
+                status: document.getElementById('edit_status').value,
+                petugas: document.getElementById('edit_petugas').value,
+                catatan: document.getElementById('edit_catatan').value
+            };
+
+            await fetch(`/api/apar/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            closeModal('inspectModal');
+            fetchAparData();
+        }
+
+        // 8. HAPUS SEMUA JADWAL DARI 1 UNIT APAR
+        async function deleteUnit(kodeApar) {
+            if (!confirm(`Hapus unit ${kodeApar} beserta seluruh jadwal inspeksinya?`)) return;
+            const rows = allAparRows.filter(r => r.kode_apar === kodeApar);
+            for (const r of rows) {
+                await fetch(`/api/apar/${r.id}`, { method: 'DELETE' });
+            }
+            fetchAparData();
+        }
+
+        // 9. CETAK STIKER QR CODE PER TABUNG
+        function printAllQR() {
+            const units = groupUnits(allAparRows.filter(r => r.kategori_gedung === currentTab));
+            const area = document.getElementById('qrPrintArea');
+            area.innerHTML = '';
+
+            units.forEach((u, idx) => {
+                const card = document.createElement('div');
+                card.className = 'border-2 border-red-600 rounded-xl p-4 text-center flex flex-col items-center';
+                card.innerHTML = `
+                    <div class="text-xs font-extrabold text-red-700 uppercase tracking-wider">KARTU KENDALI APAR</div>
+                    <div id="qr-${idx}" class="my-2"></div>
+                    <div class="font-black text-base text-slate-900">${u.kode_apar}</div>
+                    <div class="text-xs font-semibold text-slate-700">${u.gedung} - ${u.titik_lokasi}</div>
+                    <div class="text-[11px] text-slate-500 mt-1">${u.jenis_media} (${u.kapasitas}) | Exp: ${u.tgl_kadaluarsa || '-'}</div>
+                `;
+                area.appendChild(card);
+
+                const scanUrl = `${window.location.origin}/unit-apar.html?kode=${encodeURIComponent(u.kode_apar)}`;
+                new QRCode(document.getElementById(`qr-${idx}`), { text: scanUrl, width: 110, height: 110 });
+            });
+
+            setTimeout(() => window.print(), 400);
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            document.getElementById('addModal').classList.add('flex');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        fetchAparData();
+    </script>
+</body>
+</html>
