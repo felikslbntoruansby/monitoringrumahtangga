@@ -16,11 +16,11 @@
       "dest": "/server.js"
     },
     {
-      "src": "/rumah-tangga",
-      "dest": "/rumah-tangga.html"
+      "src": "/rumahtangga(\\.html)?",
+      "dest": "/index.html"
     },
     {
-      "src": "/rumahtangga",
+      "src": "/rumah-tangga(\\.html)?",
       "dest": "/rumah-tangga.html"
     },
     {
