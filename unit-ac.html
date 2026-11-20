@@ -6,6 +6,7 @@
     <title>Kartu Kendali Digital Unit AC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -25,9 +26,14 @@
                     <p class="text-[11px] text-sky-100">Maintenance & Lapor Kerusakan Lapangan</p>
                 </div>
             </div>
-            <a href="ac.html" class="text-xs bg-sky-900 hover:bg-sky-950 px-3 py-1.5 rounded-lg font-medium">
-                Admin <i class="fas fa-arrow-right ml-1"></i>
-            </a>
+            <div class="flex items-center gap-1.5">
+                <button onclick="toggleAdmin()" id="btnAdmin" class="text-xs bg-slate-900/80 hover:bg-slate-950 px-2.5 py-1.5 rounded-lg font-bold border border-white/20">
+                    <i class="fas fa-lock text-amber-400"></i> Admin
+                </button>
+                <a href="ac.html" class="text-xs bg-sky-900 hover:bg-sky-950 px-2.5 py-1.5 rounded-lg font-medium">
+                    Matriks <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
         </div>
     </header>
 
@@ -64,12 +70,12 @@
             </div>
 
             <!-- TOMBOL AKSI CEPAT -->
-            <div class="p-4 bg-slate-50 grid grid-cols-2 gap-2.5">
-                <button onclick="openActionModal('SERVIS')" class="py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+            <div class="p-4 bg-slate-50 flex flex-col sm:flex-row gap-2.5">
+                <button onclick="openActionModal('SERVIS')" class="admin-only hidden flex-1 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
                     <i class="fas fa-tools"></i> Input Hasil Cuci/Servis
                 </button>
-                <button onclick="openActionModal('LAPOR')" class="py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
-                    <i class="fas fa-exclamation-triangle"></i> Lapor AC Rusak
+                <button onclick="openActionModal('LAPOR')" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fas fa-exclamation-triangle"></i> Lapor AC Rusak / Keluhan
                 </button>
             </div>
         </div>
@@ -111,7 +117,7 @@
                     </select>
                 </div>
 
-                <div>
+                <div id="statusWrapper">
                     <label class="block text-xs font-bold text-slate-600 mb-1">Status Kondisi Unit *</label>
                     <select id="inpStatus" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
                         <option value="BAIK">✅ BAIK (Dingin Normal)</option>
@@ -127,7 +133,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Catatan Lapangan</label>
-                    <textarea id="inpCatatan" rows="2" placeholder="Contoh: Suhu keluar 18°C, tekanan freon normal" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                    <textarea id="inpCatatan" rows="2" placeholder="Contoh: Ruang Rapat Lt. 2 AC tidak dingin" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
                 </div>
 
                 <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition">
@@ -138,9 +144,37 @@
     </div>
 
     <script>
+        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
+        const ADMIN_PIN = 'POLTEKBANG2026';
+        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+
         const params = new URLSearchParams(window.location.search);
-        const kodeUnit = params.get('kode');
+        const kodeUnit = params.get('kode') || params.get('unit');
         let unitSchedules = [];
+
+        function updateAdminUI() {
+            document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+            document.getElementById('btnAdmin').innerHTML = isAdmin
+                ? `<i class="fas fa-unlock text-emerald-400"></i> Admin`
+                : `<i class="fas fa-lock text-amber-400"></i> Login`;
+        }
+
+        function toggleAdmin() {
+            if (isAdmin) {
+                isAdmin = false;
+                sessionStorage.removeItem('rt_admin');
+                updateAdminUI();
+                return;
+            }
+            const pin = prompt('Masukkan PIN Admin:');
+            if (pin === ADMIN_PIN) {
+                isAdmin = true;
+                sessionStorage.setItem('rt_admin', '1');
+                updateAdminUI();
+            } else if (pin) {
+                alert('PIN salah!');
+            }
+        }
 
         async function loadUnitAc() {
             const statusBox = document.getElementById('statusBox');
@@ -149,20 +183,14 @@
                 return;
             }
 
-            try {
-                const res = await fetch(`/api/maintenance-ac?kode_unit=${encodeURIComponent(kodeUnit)}`);
-                const data = await res.json();
-
-                if (!data || data.length === 0) {
-                    statusBox.innerHTML = `<p class="text-red-600 font-bold">Unit AC "${kodeUnit}" tidak terdaftar di sistem.</p>`;
-                    return;
-                }
-
-                unitSchedules = data.sort((a, b) => new Date(a.tgl_servis) - new Date(b.tgl_servis));
-                renderUnitDetail();
-            } catch (err) {
-                statusBox.innerHTML = `<p class="text-red-600 font-bold">Gagal terhubung ke server.</p>`;
+            const { data, error } = await sb.from('maintenance_ac').select('*').eq('kode_unit', kodeUnit);
+            if (error || !data || data.length === 0) {
+                statusBox.innerHTML = `<p class="text-red-600 font-bold">Unit AC "${kodeUnit}" tidak terdaftar di sistem.</p>`;
+                return;
             }
+
+            unitSchedules = data.sort((a, b) => new Date(a.tgl_servis) - new Date(b.tgl_servis));
+            renderUnitDetail();
         }
 
         function renderUnitDetail() {
@@ -217,15 +245,19 @@
         function openActionModal(mode) {
             document.getElementById('formMode').value = mode;
             const selectWrap = document.getElementById('scheduleSelectWrapper');
+            const statusWrap = document.getElementById('statusWrapper');
 
             if (mode === 'LAPOR') {
                 document.getElementById('modalTitle').textContent = 'Lapor Kerusakan / Keluhan AC';
                 selectWrap.classList.add('hidden');
+                statusWrap.classList.add('hidden');
                 document.getElementById('inpPekerjaan').value = 'AC Tidak Dingin';
                 document.getElementById('inpStatus').value = 'RUSAK';
             } else {
+                if (!isAdmin) return alert('Hanya Admin yang dapat menginput hasil servis rutin.');
                 document.getElementById('modalTitle').textContent = 'Input Hasil Cuci / Servis AC';
                 selectWrap.classList.remove('hidden');
+                statusWrap.classList.remove('hidden');
                 const select = document.getElementById('selectScheduleId');
                 select.innerHTML = unitSchedules.map((s, idx) =>
                     `<option value="${s.id}">Jadwal #${idx + 1} (${s.tgl_servis}) - [${s.status}]</option>`
@@ -247,43 +279,37 @@
             const today = new Date().toISOString().split('T')[0];
 
             if (mode === 'LAPOR') {
-                // Tambah tiket laporan kerusakan baru pada unit ini
                 const info = unitSchedules[0];
-                await fetch('/api/maintenance-ac', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        kategori_gedung: info.kategori_gedung,
-                        kode_unit: info.kode_unit,
-                        gedung: info.gedung,
-                        lantai: info.lantai,
-                        ruang: info.ruang,
-                        lokasi: info.lokasi,
-                        merk_ac: info.merk_ac,
-                        type_ac: info.type_ac,
-                        kapasitas: info.kapasitas,
-                        freon: info.freon,
-                        tgl_servis: today,
-                        jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
-                        status: document.getElementById('inpStatus').value,
-                        teknisi: document.getElementById('inpTeknisi').value,
-                        catatan: `[LAPORAN QR] ${document.getElementById('inpCatatan').value}`
-                    })
-                });
+                const { error } = await sb.from('maintenance_ac').insert([{
+                    kategori_gedung: info.kategori_gedung,
+                    kode_unit: info.kode_unit,
+                    gedung: info.gedung,
+                    lantai: info.lantai,
+                    ruang: info.ruang,
+                    lokasi: info.lokasi,
+                    merk_ac: info.merk_ac,
+                    type_ac: info.type_ac,
+                    kapasitas: info.kapasitas,
+                    freon: info.freon,
+                    tgl_servis: today,
+                    jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
+                    status: 'RUSAK',
+                    teknisi: document.getElementById('inpTeknisi').value,
+                    catatan: `[LAPORAN QR] ${document.getElementById('inpCatatan').value}`
+                }]);
+                if (error) return alert('Gagal mengirim laporan: ' + error.message);
+                alert('Laporan keluhan AC berhasil dikirim ke tim Rumah Tangga!');
             } else {
-                // Update jadwal cuci rutin yang dipilih
+                if (!isAdmin) return alert('Akses ditolak!');
                 const id = document.getElementById('selectScheduleId').value;
-                await fetch(`/api/maintenance-ac/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tgl_servis: today,
-                        jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
-                        status: document.getElementById('inpStatus').value,
-                        teknisi: document.getElementById('inpTeknisi').value,
-                        catatan: document.getElementById('inpCatatan').value
-                    })
-                });
+                const { error } = await sb.from('maintenance_ac').update({
+                    tgl_servis: today,
+                    jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
+                    status: document.getElementById('inpStatus').value,
+                    teknisi: document.getElementById('inpTeknisi').value,
+                    catatan: document.getElementById('inpCatatan').value
+                }).eq('id', id);
+                if (error) return alert('Gagal update: ' + error.message);
             }
 
             closeActionModal();
@@ -295,7 +321,10 @@
             document.getElementById('actionModal').classList.remove('flex');
         }
 
-        loadUnitAc();
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAdminUI();
+            loadUnitAc();
+        });
     </script>
 </body>
 </html>

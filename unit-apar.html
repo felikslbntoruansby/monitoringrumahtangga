@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kartu Kendali Digital APAR</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -25,14 +26,19 @@
                     <p class="text-[11px] text-red-100">Inspeksi & Monitoring Lapangan</p>
                 </div>
             </div>
-            <a href="apar.html" class="text-xs bg-red-800 hover:bg-red-900 px-3 py-1.5 rounded-lg font-medium">
-                Admin <i class="fas fa-arrow-right ml-1"></i>
-            </a>
+            <div class="flex items-center gap-1.5">
+                <button onclick="toggleAdmin()" id="btnAdmin" class="text-xs bg-slate-900/80 hover:bg-slate-950 px-2.5 py-1.5 rounded-lg font-bold border border-white/20">
+                    <i class="fas fa-lock text-amber-400"></i> Login
+                </button>
+                <a href="apar.html" class="text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
+                    Matriks <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
         </div>
     </header>
 
     <main class="max-w-lg mx-auto px-4 pt-4 space-y-4">
-        
+
         <!-- LOADING / ERROR STATE -->
         <div id="statusBox" class="bg-white p-6 rounded-2xl shadow-sm text-center text-slate-500 text-sm">
             <i class="fas fa-spinner fa-spin text-red-600 text-xl mb-2"></i>
@@ -72,10 +78,10 @@
                 </div>
             </div>
 
-            <!-- TOMBOL AKSI CEPAT PETUGAS -->
-            <div class="p-4 bg-slate-50">
+            <!-- TOMBOL AKSI KHUSUS ADMIN -->
+            <div class="admin-only hidden p-4 bg-slate-50">
                 <button onclick="openQuickCheck()" class="w-full py-3 bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
-                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini
+                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini (Admin)
                 </button>
             </div>
         </div>
@@ -90,7 +96,7 @@
         </div>
     </main>
 
-    <!-- MODAL INPUT INSPEKSI LAPANGAN -->
+    <!-- MODAL INPUT INSPEKSI LAPANGAN (ADMIN ONLY) -->
     <div id="checkModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
         <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -158,9 +164,37 @@
     </div>
 
     <script>
+        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
+        const ADMIN_PIN = 'POLTEKBANG2026';
+        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+
         const params = new URLSearchParams(window.location.search);
-        const kodeApar = params.get('kode');
+        const kodeApar = params.get('kode') || params.get('unit');
         let unitSchedules = [];
+
+        function updateAdminUI() {
+            document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+            document.getElementById('btnAdmin').innerHTML = isAdmin
+                ? `<i class="fas fa-unlock text-emerald-400"></i> Admin`
+                : `<i class="fas fa-lock text-amber-400"></i> Login`;
+        }
+
+        function toggleAdmin() {
+            if (isAdmin) {
+                isAdmin = false;
+                sessionStorage.removeItem('rt_admin');
+                updateAdminUI();
+                return;
+            }
+            const pin = prompt('Masukkan PIN Admin:');
+            if (pin === ADMIN_PIN) {
+                isAdmin = true;
+                sessionStorage.setItem('rt_admin', '1');
+                updateAdminUI();
+            } else if (pin) {
+                alert('PIN salah!');
+            }
+        }
 
         async function loadUnitApar() {
             const statusBox = document.getElementById('statusBox');
@@ -169,20 +203,14 @@
                 return;
             }
 
-            try {
-                const res = await fetch(`/api/apar?kode_apar=${encodeURIComponent(kodeApar)}`);
-                const data = await res.json();
-
-                if (!data || data.length === 0) {
-                    statusBox.innerHTML = `<p class="text-red-600 font-bold">Data unit APAR "${kodeApar}" tidak terdaftar di sistem.</p>`;
-                    return;
-                }
-
-                unitSchedules = data.sort((a, b) => new Date(a.tgl_inspeksi) - new Date(b.tgl_inspeksi));
-                renderUnitDetail();
-            } catch (err) {
-                statusBox.innerHTML = `<p class="text-red-600 font-bold">Gagal terhubung ke server.</p>`;
+            const { data, error } = await sb.from('apar').select('*').eq('kode_apar', kodeApar);
+            if (error || !data || data.length === 0) {
+                statusBox.innerHTML = `<p class="text-red-600 font-bold">Data unit APAR "${kodeApar}" tidak terdaftar di sistem.</p>`;
+                return;
             }
+
+            unitSchedules = data.sort((a, b) => new Date(a.tgl_inspeksi) - new Date(b.tgl_inspeksi));
+            renderUnitDetail();
         }
 
         function renderUnitDetail() {
@@ -240,12 +268,12 @@
         }
 
         function openQuickCheck() {
+            if (!isAdmin) return alert('Hanya Admin yang dapat mengisi hasil inspeksi APAR.');
             const select = document.getElementById('selectScheduleId');
             select.innerHTML = unitSchedules.map((s, idx) =>
                 `<option value="${s.id}">Cek ke-${idx + 1} (${s.tgl_inspeksi}) - [${s.status}]</option>`
             ).join('');
 
-            // Otomatis pilih jadwal pertama yang statusnya masih 'Terjadwal'
             const nextPending = unitSchedules.find(s => s.status === 'Terjadwal');
             if (nextPending) select.value = nextPending.id;
 
@@ -264,24 +292,22 @@
 
         async function saveMobileInspection(e) {
             e.preventDefault();
+            if (!isAdmin) return alert('Akses ditolak!');
+
             const id = document.getElementById('selectScheduleId').value;
             const checkedFisik = Array.from(document.querySelectorAll('.chk-fisik:checked')).map(c => c.value).join(', ');
             const today = new Date().toISOString().split('T')[0];
 
-            const payload = {
+            const { error } = await sb.from('apar').update({
                 tgl_inspeksi: today,
                 tekanan_bar: document.getElementById('inpTekanan').value,
                 kondisi_fisik: checkedFisik || 'Dicek lapangan',
                 status: document.getElementById('inpStatus').value,
                 petugas: document.getElementById('inpPetugas').value,
                 catatan: document.getElementById('inpCatatan').value
-            };
+            }).eq('id', id);
 
-            await fetch(`/api/apar/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            if (error) return alert('Gagal menyimpan: ' + error.message);
 
             closeCheckModal();
             loadUnitApar();
@@ -292,7 +318,10 @@
             document.getElementById('checkModal').classList.remove('flex');
         }
 
-        loadUnitApar();
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAdminUI();
+            loadUnitApar();
+        });
     </script>
 </body>
 </html>

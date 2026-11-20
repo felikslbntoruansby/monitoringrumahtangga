@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen & Inspeksi APAR - Rumah Tangga</title>
+    <title>Manajemen & Inspeksi APAR - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -20,7 +21,7 @@
 <body class="text-slate-800">
 
     <!-- NAVBAR -->
-    <nav class="bg-red-700 text-white shadow-md no-print">
+    <nav class="bg-red-700 text-white shadow-md no-print sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
             <div class="flex items-center gap-3">
                 <div class="bg-white/20 p-2 rounded-lg">
@@ -31,20 +32,23 @@
                     <p class="text-xs text-red-100">Sistem Manajemen Pemeliharaan Alat Pemadam Api Ringan</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 text-sm">
-                <a href="rumahtangga.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <a href="index.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
                 <a href="ac.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
                     <i class="fas fa-snowflake mr-1"></i> Unit AC
                 </a>
+                <button onclick="toggleAdmin()" id="btnAdmin" class="px-3.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-950 border border-white/20 text-white font-bold flex items-center gap-1.5 transition cursor-pointer">
+                    <i class="fas fa-lock text-amber-400"></i> Login Admin
+                </button>
             </div>
         </div>
     </nav>
 
     <!-- KONTEN UTAMA -->
     <main class="max-w-7xl mx-auto px-4 py-6 no-print">
-        
+
         <!-- RINGKASAN STATISTIK -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -72,10 +76,10 @@
         <!-- TOOLBAR AKSI & PENCARIAN -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-3">
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="openAddModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                <button onclick="openAddModal()" class="admin-only hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-plus"></i> Tambah Unit & Jadwal APAR
                 </button>
-                <button onclick="printAllQR()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2">
+                <button onclick="printAllQR()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-qrcode"></i> Cetak Semua Stiker QR
                 </button>
             </div>
@@ -83,7 +87,7 @@
             <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                 <div class="relative flex-1 md:w-64">
                     <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode, gedung, merk..." 
+                    <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode, gedung, merk..."
                         class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
                 </div>
             </div>
@@ -101,13 +105,13 @@
                 </button>
             </div>
 
-            <!-- FILTER BULAN (KHUSUS TAB MONTHLY) -->
+            <!-- FILTER BULAN -->
             <div id="monthlyFilterBar" class="hidden p-4 bg-blue-50/60 border-b border-slate-200 flex items-center gap-3">
                 <label class="text-sm font-semibold text-slate-700">Pilih Bulan Inspeksi:</label>
                 <input type="month" id="monthPicker" onchange="renderMonthlyView()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white">
             </div>
 
-            <!-- TABEL MATRIKS UNIT APAR (Cek 1 - Cek 12) -->
+            <!-- TABEL MATRIKS UNIT APAR -->
             <div id="matrixView" class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -134,7 +138,7 @@
                             <th class="p-3 font-bold">Gedung / Titik Lokasi</th>
                             <th class="p-3 font-bold">Media & Kapasitas</th>
                             <th class="p-3 font-bold">Tekanan & Status</th>
-                            <th class="p-3 font-bold text-center">Update</th>
+                            <th class="p-3 font-bold admin-only hidden text-center">Update</th>
                         </tr>
                     </thead>
                     <tbody id="monthlyTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
@@ -143,10 +147,10 @@
         </div>
     </main>
 
-    <!-- AREA PRINT STIKER QR (HANYA MUNCUL SAAT PRINT) -->
+    <!-- AREA PRINT STIKER QR -->
     <div id="qrPrintArea" class="hidden p-6"></div>
 
-    <!-- MODAL TAMBAH UNIT APAR + GENERATE 12 JADWAL BULANAN -->
+    <!-- MODAL TAMBAH UNIT APAR -->
     <div id="addModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -225,7 +229,7 @@
         </div>
     </div>
 
-    <!-- MODAL UPDATE HASIL INSPEKSI -->
+    <!-- MODAL UPDATE HASIL INSPEKSI (ADMIN ONLY) -->
     <div id="inspectModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -279,32 +283,65 @@
         </div>
     </div>
 
+    <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
     <script>
+        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
+        const ADMIN_PIN = 'POLTEKBANG2026';
+        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+
         let allAparRows = [];
         let currentTab = 'G. UMUM';
 
-        // 1. FETCH DATA DARI BACKEND
-        async function fetchAparData() {
-            try {
-                const res = await fetch('/api/apar');
-                allAparRows = await res.json();
-                updateStats();
-                if (currentTab === 'MONTHLY') renderMonthlyView();
-                else renderTable();
-            } catch (err) {
-                console.error('Gagal mengambil data APAR:', err);
+        function showToast(msg, isErr = false) {
+            const el = document.createElement('div');
+            el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+            el.innerText = msg;
+            document.getElementById('toast').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        function updateAdminUI() {
+            document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+            document.getElementById('btnAdmin').innerHTML = isAdmin
+                ? `<i class="fas fa-unlock text-emerald-400"></i> Admin Aktif (Logout)`
+                : `<i class="fas fa-lock text-amber-400"></i> Login Admin`;
+        }
+
+        function toggleAdmin() {
+            if (isAdmin) {
+                isAdmin = false;
+                sessionStorage.removeItem('rt_admin');
+                updateAdminUI();
+                if (currentTab === 'MONTHLY') renderMonthlyView(); else renderTable();
+                return showToast('Mode Admin dinonaktifkan');
+            }
+            const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
+            if (pin === ADMIN_PIN) {
+                isAdmin = true;
+                sessionStorage.setItem('rt_admin', '1');
+                updateAdminUI();
+                if (currentTab === 'MONTHLY') renderMonthlyView(); else renderTable();
+                showToast('Login Admin berhasil!');
+            } else if (pin) {
+                showToast('PIN Admin salah!', true);
             }
         }
 
-        // 2. KELOMPOKKAN BARIS JADWAL MENJADI UNIT UNIK (MATRIKS 12 BULAN)
+        async function fetchAparData() {
+            const { data, error } = await sb.from('apar').select('*').order('id', { ascending: true });
+            if (error) return showToast('Gagal memuat data APAR: ' + error.message, true);
+            allAparRows = data || [];
+            updateStats();
+            if (currentTab === 'MONTHLY') renderMonthlyView();
+            else renderTable();
+        }
+
         function groupUnits(rows) {
             const map = {};
             rows.forEach(r => {
                 if (!map[r.kode_apar]) {
-                    map[r.kode_apar] = {
-                        ...r,
-                        schedules: []
-                    };
+                    map[r.kode_apar] = { ...r, schedules: [] };
                 }
                 map[r.kode_apar].schedules.push(r);
             });
@@ -314,7 +351,6 @@
             });
         }
 
-        // 3. HITUNG STATISTIK DASHBOARD
         function updateStats() {
             const units = groupUnits(allAparRows);
             const today = new Date().toISOString().split('T')[0];
@@ -338,7 +374,6 @@
             document.getElementById('statBulanIni').textContent = bulanIni;
         }
 
-        // 4. RENDER TABEL MATRIKS PER GEDUNG
         function renderTable() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const filteredRows = allAparRows.filter(r => r.kategori_gedung === currentTab);
@@ -368,13 +403,23 @@
                     else if (s.status === 'PERLU REFILL') color = 'bg-amber-500 text-white border-amber-600';
                     else if (s.status === 'RUSAK') color = 'bg-red-600 text-white border-red-700';
 
-                    return `
-                        <button onclick='openInspectModal(${JSON.stringify(s)})' title="${s.tgl_inspeksi} - ${s.status}"
-                            class="w-11 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center hover:scale-105 transition ${color}">
-                            <span>Cek ${idx + 1}</span>
-                            <span class="text-[9px] opacity-90">${s.tgl_inspeksi.slice(5)}</span>
-                        </button>
-                    `;
+                    if (isAdmin) {
+                        return `
+                            <button onclick='openInspectModal(${JSON.stringify(s)})' title="Klik untuk edit: ${s.tgl_inspeksi} - ${s.status}"
+                                class="w-11 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center hover:scale-105 transition cursor-pointer ${color}">
+                                <span>Cek ${idx + 1}</span>
+                                <span class="text-[9px] opacity-90">${s.tgl_inspeksi.slice(5)}</span>
+                            </button>
+                        `;
+                    } else {
+                        return `
+                            <div title="${s.tgl_inspeksi} - ${s.status} (Login Admin untuk mengubah)"
+                                class="w-11 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center select-none ${color}">
+                                <span>Cek ${idx + 1}</span>
+                                <span class="text-[9px] opacity-90">${s.tgl_inspeksi.slice(5)}</span>
+                            </div>
+                        `;
+                    }
                 }).join('');
 
                 return `
@@ -398,10 +443,11 @@
                                     class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs" title="Buka Kartu Kendali QR">
                                     <i class="fas fa-qrcode"></i>
                                 </a>
+                                ${isAdmin ? `
                                 <button onclick="deleteUnit('${u.kode_apar}')"
-                                    class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs" title="Hapus Unit">
+                                    class="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs cursor-pointer" title="Hapus Unit">
                                     <i class="fas fa-trash"></i>
-                                </button>
+                                </button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -409,7 +455,6 @@
             }).join('');
         }
 
-        // 5. SWITCH TAB & JADWAL BULANAN
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
@@ -452,18 +497,20 @@
                             ${r.status} (${r.tekanan_bar || 'Normal'})
                         </span>
                     </td>
+                    ${isAdmin ? `
                     <td class="p-3 text-center">
-                        <button onclick='openInspectModal(${JSON.stringify(r)})' class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+                        <button onclick='openInspectModal(${JSON.stringify(r)})' class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold cursor-pointer">
                             Cek Sekarang
                         </button>
-                    </td>
+                    </td>` : ''}
                 </tr>
             `).join('');
         }
 
-        // 6. SUBMIT TAMBAH UNIT + GENERATE 12 JADWAL OTOMATIS
         async function submitNewApar(e) {
             e.preventDefault();
+            if (!isAdmin) return showToast('Akses ditolak! Login Admin terlebih dahulu.', true);
+
             const fd = new FormData(e.target);
             const jumlah = parseInt(fd.get('jumlah_siklus'), 10);
             const startDate = new Date(fd.get('tgl_mulai'));
@@ -487,19 +534,17 @@
                 });
             }
 
-            await fetch('/api/apar/bulk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(rowsToInsert)
-            });
+            const { error } = await sb.from('apar').insert(rowsToInsert);
+            if (error) return showToast('Gagal menyimpan: ' + error.message, true);
 
             closeModal('addModal');
             e.target.reset();
+            showToast('Unit APAR & jadwal berhasil dibuat!');
             fetchAparData();
         }
 
-        // 7. UPDATE HASIL INSPEKSI
         function openInspectModal(row) {
+            if (!isAdmin) return showToast('Hanya Admin yang dapat mengubah hasil inspeksi!', true);
             document.getElementById('edit_id').value = row.id;
             document.getElementById('edit_title').textContent = `${row.kode_apar} - ${row.gedung}`;
             document.getElementById('edit_subtitle').textContent = `${row.titik_lokasi} | ${row.jenis_media} (${row.kapasitas})`;
@@ -515,6 +560,8 @@
 
         async function submitInspection(e) {
             e.preventDefault();
+            if (!isAdmin) return showToast('Akses ditolak!', true);
+
             const id = document.getElementById('edit_id').value;
             const payload = {
                 tgl_inspeksi: document.getElementById('edit_tgl').value,
@@ -525,27 +572,25 @@
                 catatan: document.getElementById('edit_catatan').value
             };
 
-            await fetch(`/api/apar/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const { error } = await sb.from('apar').update(payload).eq('id', id);
+            if (error) return showToast('Gagal update: ' + error.message, true);
 
             closeModal('inspectModal');
+            showToast('Hasil inspeksi APAR diperbarui!');
             fetchAparData();
         }
 
-        // 8. HAPUS SEMUA JADWAL DARI 1 UNIT APAR
         async function deleteUnit(kodeApar) {
+            if (!isAdmin) return showToast('Akses ditolak!', true);
             if (!confirm(`Hapus unit ${kodeApar} beserta seluruh jadwal inspeksinya?`)) return;
-            const rows = allAparRows.filter(r => r.kode_apar === kodeApar);
-            for (const r of rows) {
-                await fetch(`/api/apar/${r.id}`, { method: 'DELETE' });
-            }
+
+            const { error } = await sb.from('apar').delete().eq('kode_apar', kodeApar);
+            if (error) return showToast('Gagal menghapus: ' + error.message, true);
+
+            showToast(`Unit ${kodeApar} berhasil dihapus!`);
             fetchAparData();
         }
 
-        // 9. CETAK STIKER QR CODE PER TABUNG
         function printAllQR() {
             const units = groupUnits(allAparRows.filter(r => r.kategori_gedung === currentTab));
             const area = document.getElementById('qrPrintArea');
@@ -571,6 +616,7 @@
         }
 
         function openAddModal() {
+            if (!isAdmin) return showToast('Login Admin terlebih dahulu!', true);
             document.getElementById('addModal').classList.remove('hidden');
             document.getElementById('addModal').classList.add('flex');
         }
@@ -579,7 +625,10 @@
             document.getElementById(id).classList.remove('flex');
         }
 
-        fetchAparData();
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAdminUI();
+            fetchAparData();
+        });
     </script>
 </body>
 </html>
