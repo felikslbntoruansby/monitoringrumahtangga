@@ -396,7 +396,7 @@ app.delete('/api/apar/:id', async (req, res) => {
 // ==========================================
 // ROUTING HALAMAN HTML (LOKAL & EXPRESS V5)
 // ==========================================
-app.get('/rumah-tangga', (req, res) => res.sendFile(path.join(__dirname, 'rumah-tangga.html')));
+app.get('/ruangan', (req, res) => res.sendFile(path.join(__dirname, 'ruangan.html')));
 app.get('/rumahtangga', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/kendaraan', (req, res) => res.sendFile(path.join(__dirname, 'kendaraan.html')));
 app.get('/inventaris', (req, res) => res.sendFile(path.join(__dirname, 'inventaris.html')));

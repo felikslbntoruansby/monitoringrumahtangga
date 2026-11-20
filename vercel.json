@@ -20,8 +20,8 @@
       "dest": "/index.html"
     },
     {
-      "src": "/rumah-tangga(\\.html)?",
-      "dest": "/rumah-tangga.html"
+      "src": "/ruangan(\\.html)?",
+      "dest": "/ruangan.html"
     },
     {
       "src": "/kendaraan(\\.html)?",
