@@ -1,651 +1,373 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Rumah Tangga - Poltekbang Surabaya</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-</head>
-<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+try { require('dotenv').config(); } catch (e) {}
+const express = require('express');
+const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-  <!-- MOBILE TOPBAR -->
-  <div class="lg:hidden sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-md">
-    <button onclick="toggleSidebar(true)" class="p-2 bg-slate-800 rounded-xl">
-      <i class="fa-solid fa-bars"></i>
-    </button>
-    <span class="font-extrabold text-xs tracking-wide">SUB-BAGIAN RUMAH TANGGA</span>
-    <span class="w-8"></span>
-  </div>
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.static(path.join(__dirname)));
 
-  <div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://bxthbzzslipaoztvqupw.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_KEY || 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0';
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-200 z-50 flex flex-col justify-between border-r border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
-    <div>
-      <!-- BRANDING -->
-      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg">
-            <i class="fa-solid fa-plane-up"></i>
-          </div>
-          <div>
-            <h1 class="text-sm font-extrabold text-white leading-tight">Rumah Tangga</h1>
-            <span class="text-[11px] text-slate-400">Poltekbang Surabaya</span>
-          </div>
-        </div>
-        <button onclick="toggleSidebar(false)" class="lg:hidden text-slate-400 hover:text-white">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-      <!-- MENU UTAMA -->
-      <nav class="p-4 space-y-1.5">
-        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Menu Utama</div>
+// ==========================================
+// 0. VERIFIKASI PIN ADMIN & PREFERENCES
+// ==========================================
+app.post('/api/verify-pin', (req, res) => {
+  const { pin } = req.body;
+  const validPin = process.env.ADMIN_PIN || 'POLTEKBANG2026';
+  if (pin === validPin) {
+    return res.json({ success: true });
+  }
+  res.status(401).json({ success: false, message: 'PIN Admin salah!' });
+});
 
-        <button onclick="switchTab('ringkasan')" id="nav-ringkasan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-600 text-white shadow-md transition cursor-pointer">
-          <i class="fa-solid fa-chart-pie w-4 text-center"></i>
-          <span>Ringkasan Dashboard</span>
-        </button>
+app.get('/api/preferences/:key', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('preferences')
+      .select('value')
+      .eq('key', req.params.key)
+      .maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ value: data ? data.value : '' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <button onclick="switchTab('ruangan')" id="nav-ruangan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
-          <i class="fa-solid fa-door-open w-4 text-center text-sky-400"></i>
-          <span>1. Peminjaman Ruangan</span>
-        </button>
+app.post('/api/preferences/:key', async (req, res) => {
+  try {
+    const { value } = req.body;
+    const { error } = await supabase
+      .from('preferences')
+      .upsert({ key: req.params.key, value, updated_at: new Date() });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <button onclick="switchTab('kendaraan')" id="nav-kendaraan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
-          <i class="fa-solid fa-car-side w-4 text-center text-emerald-400"></i>
-          <span>2. Peminjaman Kendaraan</span>
-        </button>
+// ==========================================
+// 1. API INVENTARIS BARANG & LOG MUTASI
+// ==========================================
+app.get('/api/inventory', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('inventory').select('*').order('code', { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <button onclick="switchTab('inventaris')" id="nav-inventaris" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
-          <i class="fa-solid fa-boxes-stacked w-4 text-center text-amber-400"></i>
-          <span>3. Inventaris Barang</span>
-        </button>
+app.post('/api/inventory', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('inventory').insert([req.body]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <button onclick="switchTab('ac')" id="nav-ac" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
-          <i class="fa-solid fa-snowflake w-4 text-center text-cyan-400"></i>
-          <span>4. Data AC</span>
-        </button>
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('inventory').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <button onclick="switchTab('apar')" id="nav-apar" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer">
-          <i class="fa-solid fa-fire-extinguisher w-4 text-center text-rose-400"></i>
-          <span>5. Data APAR & Hydrant</span>
-        </button>
-      </nav>
-    </div>
+app.delete('/api/inventory/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('inventory').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    <!-- FOOTER SIDEBAR -->
-    <div class="p-4 border-t border-slate-800 bg-slate-950/70 space-y-2.5">
-      <button onclick="toggleAdminMode()" id="btnAdminStatus" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
-        <i class="fa-solid fa-lock text-amber-400"></i>
-        <span>Login Admin (Kelola Data)</span>
-      </button>
-      <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
-        <span class="flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
-        </span>
-        <span id="clock" class="font-mono font-bold text-slate-300">--:--:--</span>
-      </div>
-    </div>
-  </aside>
+app.post('/api/inventory/transaction', async (req, res) => {
+  try {
+    const inventory_id = req.body.inventoryId || req.body.inventory_id;
+    const type = req.body.type;
+    const qty = parseInt(req.body.quantity, 10);
+    const pic_name = req.body.picName || req.body.pic_name;
+    const notes = req.body.notes;
 
-  <!-- KONTEN UTAMA -->
-  <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+    const { data: item, error: fetchErr } = await supabase.from('inventory').select('*').eq('id', inventory_id).single();
+    if (fetchErr || !item) return res.status(404).json({ error: 'Barang tidak ditemukan' });
 
-    <!-- HEADER BANNER -->
-    <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-sky-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <div>
-        <span class="text-[10px] font-bold uppercase tracking-widest text-sky-300">BIDANG UMUM • POLITEKNIK PENERBANGAN SURABAYA</span>
-        <h2 id="pageTitle" class="text-2xl font-extrabold mt-1">Ringkasan Layanan Rumah Tangga</h2>
-        <p id="pageSubtitle" class="text-xs text-sky-100/90 mt-1">Monitoring peminjaman ruangan, kendaraan dinas, inventaris, pemeliharaan AC, serta kesiapan APAR & Hydrant.</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="loadAllData(true)" class="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
-          <i class="fa-solid fa-rotate"></i> Refresh Data
-        </button>
-      </div>
-    </div>
+    const newIn = type === 'IN' ? (item.inQty || 0) + qty : (item.inQty || 0);
+    const newOut = type === 'OUT' ? (item.outQty || 0) + qty : (item.outQty || 0);
 
-    <!-- SECTION 0: RINGKASAN DASHBOARD -->
-    <section id="sec-ringkasan" class="tab-section space-y-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div onclick="switchTab('ruangan')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-sky-400 transition cursor-pointer">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Peminjaman Ruangan</span>
-            <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center"><i class="fa-solid fa-door-open"></i></span>
-          </div>
-          <div id="kpi-ruangan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
-          <div class="text-[11px] text-slate-500 mt-1">Total jadwal tercatat</div>
-        </div>
+    const { error: updErr } = await supabase.from('inventory').update({ inQty: newIn, outQty: newOut }).eq('id', inventory_id);
+    if (updErr) return res.status(500).json({ error: updErr.message });
 
-        <div onclick="switchTab('kendaraan')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-emerald-400 transition cursor-pointer">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Kendaraan Dinas</span>
-            <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-car-side"></i></span>
-          </div>
-          <div id="kpi-kendaraan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
-          <div class="text-[11px] text-slate-500 mt-1">Total penggunaan kendaraan</div>
-        </div>
+    const { data: logData, error: logErr } = await supabase
+      .from('logs')
+      .insert([{ inventory_id, type, quantity: qty, pic_name, notes }])
+      .select();
+    if (logErr) return res.status(500).json({ error: logErr.message });
 
-        <div onclick="switchTab('inventaris')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-amber-400 transition cursor-pointer">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Inventaris Barang</span>
-            <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
-          </div>
-          <div id="kpi-inventaris" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
-          <div class="text-[11px] text-slate-500 mt-1">Total stok tersedia</div>
-        </div>
+    res.status(201).json(logData[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <div onclick="switchTab('ac')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-cyan-400 transition cursor-pointer">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Unit AC Terdata</span>
-            <span class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center"><i class="fa-solid fa-snowflake"></i></span>
-          </div>
-          <div id="kpi-ac" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
-          <div id="kpi-ac-sub" class="text-[11px] text-slate-500 mt-1">0 jadwal butuh perhatian</div>
-        </div>
+app.get('/api/logs', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('logs').select('*, inventory(code, name)').order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <div onclick="switchTab('apar')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-rose-400 transition cursor-pointer">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase text-slate-400">APAR & Hydrant</span>
-            <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
-          </div>
-          <div id="kpi-apar" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
-          <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 unit siap pakai</div>
-        </div>
-      </div>
+app.delete('/api/logs/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('logs').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-      <!-- KARTU AKSES CEPAT 5 MODUL -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div onclick="switchTab('ruangan')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-door-open"></i></div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm">1. Peminjaman Ruangan</h3>
-            <p class="text-xs text-slate-500 mt-1">Booking ruang rapat, aula, kelas, dan jadwal pemakaian fasilitas gedung.</p>
-          </div>
-        </div>
+// ==========================================
+// 2. API PEMINJAMAN RUANGAN
+// ==========================================
+app.get('/api/peminjaman-ruangan', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_ruangan').select('*').order('tgl_pinjam', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <div onclick="switchTab('kendaraan')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-car-side"></i></div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm">2. Peminjaman Kendaraan</h3>
-            <p class="text-xs text-slate-500 mt-1">Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan driver.</p>
-          </div>
-        </div>
+app.post('/api/peminjaman-ruangan', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_ruangan').insert([req.body]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <div onclick="switchTab('inventaris')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-boxes-stacked"></i></div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm">3. Inventaris Barang</h3>
-            <p class="text-xs text-slate-500 mt-1">Pendataan perlengkapan rumah tangga, lokasi penempatan, dan stok barang.</p>
-          </div>
-        </div>
+app.put('/api/peminjaman-ruangan/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_ruangan').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <a href="ac.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-snowflake"></i></div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm">4. Matriks & QR Unit AC</h3>
-            <p class="text-xs text-slate-500 mt-1">Buka kartu kendali AC per gedung, jadwal cuci rutin, dan cetak stiker QR.</p>
-          </div>
-        </a>
+app.delete('/api/peminjaman-ruangan/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('peminjaman_ruangan').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        <a href="apar.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-md transition cursor-pointer flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
-          <div>
-            <h3 class="font-bold text-slate-900 text-sm">5. Matriks & QR APAR</h3>
-            <p class="text-xs text-slate-500 mt-1">Buka kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan stiker QR.</p>
-          </div>
-        </a>
-      </div>
-    </section>
+// ==========================================
+// 3. API PEMINJAMAN KENDARAAN
+// ==========================================
+app.get('/api/peminjaman-kendaraan', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_kendaraan').select('*').order('tgl_pinjam', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    <!-- SECTION 1: PEMINJAMAN RUANGAN -->
-    <section id="sec-ruangan" class="tab-section hidden space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-        <input type="search" oninput="renderRuangan()" id="search-ruangan" placeholder="Cari ruangan, peminjam, atau kegiatan..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
-        <button onclick="openModal('modal-ruangan')" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl cursor-pointer">
-          <i class="fa-solid fa-plus mr-1"></i> Ajukan Peminjaman Ruangan
-        </button>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Tanggal & Jam</th>
-              <th class="p-3.5">Ruangan</th>
-              <th class="p-3.5">Peminjam / Unit</th>
-              <th class="p-3.5">Kegiatan</th>
-              <th class="p-3.5">Status</th>
-              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-ruangan" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
+app.post('/api/peminjaman-kendaraan', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_kendaraan').insert([req.body]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    <!-- SECTION 2: PEMINJAMAN KENDARAAN -->
-    <section id="sec-kendaraan" class="tab-section hidden space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-        <input type="search" oninput="renderKendaraan()" id="search-kendaraan" placeholder="Cari kendaraan, driver, atau tujuan..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
-        <button onclick="openModal('modal-kendaraan')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer">
-          <i class="fa-solid fa-plus mr-1"></i> Ajukan Peminjaman Kendaraan
-        </button>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Tanggal</th>
-              <th class="p-3.5">Kendaraan & Nopol</th>
-              <th class="p-3.5">Driver / Pemohon</th>
-              <th class="p-3.5">Tujuan</th>
-              <th class="p-3.5">Status</th>
-              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-kendaraan" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
+app.put('/api/peminjaman-kendaraan/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('peminjaman_kendaraan').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    <!-- SECTION 3: INVENTARIS BARANG -->
-    <section id="sec-inventaris" class="tab-section hidden space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-        <input type="search" oninput="renderInventaris()" id="search-inventaris" placeholder="Cari kode, nama barang, atau lokasi..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
-        <button onclick="openModal('modal-inventaris')" class="admin-only hidden px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl cursor-pointer">
-          <i class="fa-solid fa-plus mr-1"></i> Tambah Inventaris
-        </button>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Kode</th>
-              <th class="p-3.5">Nama Barang</th>
-              <th class="p-3.5">Lokasi</th>
-              <th class="p-3.5">Stok Tersedia</th>
-              <th class="p-3.5">Kondisi</th>
-              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-inventaris" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
+app.delete('/api/peminjaman-kendaraan/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('peminjaman_kendaraan').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    <!-- SECTION 4: DATA AC -->
-    <section id="sec-ac" class="tab-section hidden space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-        <input type="search" oninput="renderAc()" id="search-ac" placeholder="Cari kode AC, gedung, atau merk..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
-        <a href="ac.html" class="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl cursor-pointer">
-          <i class="fa-solid fa-qrcode mr-1"></i> Buka Matriks & QR AC Lengkap
-        </a>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Kode AC</th>
-              <th class="p-3.5">Gedung & Ruangan</th>
-              <th class="p-3.5">Merk / Kapasitas</th>
-              <th class="p-3.5">Jadwal Servis</th>
-              <th class="p-3.5">Status</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-ac" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
+// ==========================================
+// 4. API MAINTENANCE AC
+// ==========================================
+app.get('/api/maintenance-ac', async (req, res) => {
+  try {
+    const { kode_unit, kategori_gedung } = req.query;
+    let query = supabase.from('maintenance_ac').select('*').order('tgl_servis', { ascending: true });
+    if (kode_unit) query = query.eq('kode_unit', kode_unit);
+    if (kategori_gedung) query = query.eq('kategori_gedung', kategori_gedung);
 
-    <!-- SECTION 5: DATA APAR & HYDRANT -->
-    <section id="sec-apar" class="tab-section hidden space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-        <input type="search" oninput="renderApar()" id="search-apar" placeholder="Cari kode APAR, gedung, atau lokasi..." class="w-full sm:w-80 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
-        <a href="apar.html" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl cursor-pointer">
-          <i class="fa-solid fa-qrcode mr-1"></i> Buka Matriks & QR APAR Lengkap
-        </a>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
-            <tr>
-              <th class="p-3.5">Kode APAR</th>
-              <th class="p-3.5">Gedung & Titik Lokasi</th>
-              <th class="p-3.5">Media / Kapasitas</th>
-              <th class="p-3.5">Kadaluarsa</th>
-              <th class="p-3.5">Status</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-apar" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  </main>
+app.post('/api/maintenance-ac', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('maintenance_ac').insert([req.body]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  <!-- MODAL FORM 1: RUANGAN -->
-  <div id="modal-ruangan" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
-    <form onsubmit="submitForm(event, '/api/peminjaman-ruangan', 'modal-ruangan')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
-      <h3 class="text-base font-extrabold text-slate-900">Ajukan Peminjaman Ruangan</h3>
-      <input name="ruangan" required placeholder="Nama Ruangan (misal: Ruang Rapat Utama / Aula)" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="nama_peminjam" required placeholder="Nama Peminjam / Unit Kerja" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="keperluan" required placeholder="Nama Kegiatan / Keperluan" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <div class="grid grid-cols-2 gap-2">
-        <div><label class="text-[10px] text-slate-500">Tanggal Pinjam</label><input type="date" name="tgl_pinjam" required class="w-full border border-slate-300 rounded-xl p-2.5"></div>
-        <div><label class="text-[10px] text-slate-500">Jam Pelaksanaan</label><input type="text" name="jam_mulai" placeholder="08.00 - 15.00 WIB" class="w-full border border-slate-300 rounded-xl p-2.5"></div>
-      </div>
-      <input type="hidden" name="status" value="Disetujui">
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
-        <button type="submit" class="px-4 py-2 bg-sky-600 text-white rounded-xl font-bold">Simpan</button>
-      </div>
-    </form>
-  </div>
+app.post('/api/maintenance-ac/bulk', async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body) ? req.body : req.body.data;
+    const { data, error } = await supabase.from('maintenance_ac').insert(rows).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json({ inserted: data.length, data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  <!-- MODAL FORM 2: KENDARAAN -->
-  <div id="modal-kendaraan" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
-    <form onsubmit="submitForm(event, '/api/peminjaman-kendaraan', 'modal-kendaraan')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
-      <h3 class="text-base font-extrabold text-slate-900">Ajukan Peminjaman Kendaraan</h3>
-      <input name="kendaraan" required placeholder="Jenis Kendaraan & Nopol (misal: Toyota Innova L 1420 BP)" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="nama_driver" required placeholder="Nama Pemohon / Driver" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="tujuan" required placeholder="Tujuan Perjalanan Dinas" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <div><label class="text-[10px] text-slate-500">Tanggal Penggunaan</label><input type="date" name="tgl_pinjam" required class="w-full border border-slate-300 rounded-xl p-2.5"></div>
-      <input type="hidden" name="status" value="Disetujui">
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
-        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Simpan</button>
-      </div>
-    </form>
-  </div>
+app.put('/api/maintenance-ac/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('maintenance_ac').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  <!-- MODAL FORM 3: INVENTARIS -->
-  <div id="modal-inventaris" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
-    <form onsubmit="submitForm(event, '/api/inventory', 'modal-inventaris')" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs">
-      <h3 class="text-base font-extrabold text-slate-900">Tambah Inventaris Barang</h3>
-      <input name="code" required placeholder="Kode Inventaris (misal: INV-RT-001)" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="name" required placeholder="Nama Barang" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <input name="location" required placeholder="Lokasi Ruangan / Gedung" class="w-full border border-slate-300 rounded-xl p-2.5">
-      <div class="grid grid-cols-2 gap-2">
-        <input type="number" name="initial" value="1" min="0" required placeholder="Jumlah Awal" class="border border-slate-300 rounded-xl p-2.5">
-        <input name="unit" value="Unit" placeholder="Satuan (Unit/Set)" class="border border-slate-300 rounded-xl p-2.5">
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold">Batal</button>
-        <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold">Simpan</button>
-      </div>
-    </form>
-  </div>
+app.delete('/api/maintenance-ac/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('maintenance_ac').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+// ==========================================
+// 5. API DATA & INSPEKSI APAR
+// ==========================================
+app.get('/api/apar', async (req, res) => {
+  try {
+    const { kode_apar, kategori_gedung } = req.query;
+    let query = supabase.from('apar').select('*').order('tgl_inspeksi', { ascending: true });
+    if (kode_apar) query = query.eq('kode_apar', kode_apar);
+    if (kategori_gedung) query = query.eq('kategori_gedung', kategori_gedung);
 
-  <script>
-    let isAdmin = sessionStorage.getItem('rt_admin') === '1';
-    let db = {
-      ruangan: [],
-      kendaraan: [],
-      inventaris: [],
-      ac: [],
-      apar: []
-    };
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    const TITLES = {
-      ringkasan: ['Ringkasan Layanan Rumah Tangga', 'Monitoring peminjaman ruangan, kendaraan dinas, inventaris, pemeliharaan AC, serta kesiapan APAR & Hydrant.'],
-      ruangan: ['1. Peminjaman Ruangan', 'Jadwal penggunaan dan pengajuan peminjaman ruang rapat, kelas, maupun aula kampus.'],
-      kendaraan: ['2. Peminjaman Kendaraan Dinas', 'Monitoring operasional kendaraan dinas, tujuan perjalanan, dan jadwal kembali.'],
-      inventaris: ['3. Inventaris Barang Rumah Tangga', 'Daftar perlengkapan, jumlah aset, lokasi penempatan, dan status kondisi barang.'],
-      ac: ['4. Data Unit AC', 'Pemantauan unit pendingin ruangan (AC), jadwal servis berkala, dan status operasional.'],
-      apar: ['5. Data APAR & Hydrant', 'Monitoring keselamatan kebakaran: titik APAR & Hydrant, masa berlaku, dan kesiapan alat.']
-    };
+app.post('/api/apar', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('apar').insert([req.body]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    setInterval(() => {
-      document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
-    }, 1000);
+app.post('/api/apar/bulk', async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body) ? req.body : req.body.data;
+    const { data, error } = await supabase.from('apar').insert(rows).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json({ inserted: data.length, data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    function toggleSidebar(show) {
-      document.getElementById('sidebar').classList.toggle('-translate-x-full', !show);
-      document.getElementById('sidebarBackdrop').classList.toggle('hidden', !show);
-    }
+app.put('/api/apar/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('apar').update(req.body).eq('id', req.params.id).select();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    function showToast(msg, isErr = false) {
-      const el = document.createElement('div');
-      el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
-      el.innerText = msg;
-      document.getElementById('toast').appendChild(el);
-      setTimeout(() => el.remove(), 3000);
-    }
+app.delete('/api/apar/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('apar').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    function applyAdminUI() {
-      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
-      const btn = document.getElementById('btnAdminStatus');
-      btn.innerHTML = isAdmin
-        ? `<i class="fa-solid fa-unlock text-emerald-400"></i><span>Mode Admin Aktif (Logout)</span>`
-        : `<i class="fa-solid fa-lock text-amber-400"></i><span>Login Admin (Kelola Data)</span>`;
-    }
+// ==========================================
+// ROUTING HALAMAN HTML (LOKAL & EXPRESS V5)
+// ==========================================
+app.get('/rumah-tangga', (req, res) => res.sendFile(path.join(__dirname, 'rumah-tangga.html')));
+app.get('/rumahtangga', (req, res) => res.sendFile(path.join(__dirname, 'rumah-tangga.html')));
+app.get('/inventory', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/ac', (req, res) => res.sendFile(path.join(__dirname, 'ac.html')));
+app.get('/unit-ac', (req, res) => res.sendFile(path.join(__dirname, 'unit-ac.html')));
+app.get('/apar', (req, res) => res.sendFile(path.join(__dirname, 'apar.html')));
+app.get('/unit-apar', (req, res) => res.sendFile(path.join(__dirname, 'unit-apar.html')));
 
-    async function toggleAdminMode() {
-      if (isAdmin) {
-        isAdmin = false;
-        sessionStorage.removeItem('rt_admin');
-        applyAdminUI();
-        renderAll();
-        showToast('Mode Admin dinonaktifkan');
-        return;
-      }
-      const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
-      if (!pin) return;
-      const res = await fetch('/api/verify-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin })
-      });
-      if (res.ok) {
-        isAdmin = true;
-        sessionStorage.setItem('rt_admin', '1');
-        applyAdminUI();
-        renderAll();
-        showToast('Login Admin berhasil!');
-      } else {
-        showToast('PIN Admin salah!', true);
-      }
-    }
+// Fallback halaman utama (Express v5)
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
-      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+const PORT = process.env.PORT || 3000;
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server Rumah Tangga aktif di http://localhost:${PORT}`);
+  });
+}
 
-      document.querySelectorAll('.nav-btn').forEach(b => {
-        b.classList.remove('bg-sky-600', 'text-white', 'shadow-md');
-        b.classList.add('text-slate-300');
-      });
-      const active = document.getElementById(`nav-${tab}`);
-      active.classList.add('bg-sky-600', 'text-white', 'shadow-md');
-      active.classList.remove('text-slate-300');
-
-      document.getElementById('pageTitle').innerText = TITLES[tab][0];
-      document.getElementById('pageSubtitle').innerText = TITLES[tab][1];
-      toggleSidebar(false);
-    }
-
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModals() { document.querySelectorAll('.modal-box').forEach(m => m.classList.add('hidden')); }
-
-    async function safeFetch(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status} pada ${url}`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    }
-
-    async function loadAllData(notify = false) {
-      try {
-        const [ruangan, kendaraan, inventaris, ac, apar] = await Promise.all([
-          safeFetch('/api/peminjaman-ruangan'),
-          safeFetch('/api/peminjaman-kendaraan'),
-          safeFetch('/api/inventory'),
-          safeFetch('/api/maintenance-ac'),
-          safeFetch('/api/apar')
-        ]);
-        db = { ruangan, kendaraan, inventaris, ac, apar };
-        renderAll();
-        if (notify) showToast('Data berhasil diperbarui!');
-      } catch (e) {
-        console.error(e);
-        showToast('Gagal memuat data: ' + e.message, true);
-      }
-    }
-
-    function renderAll() {
-      document.getElementById('kpi-ruangan').innerText = db.ruangan.length;
-      document.getElementById('kpi-kendaraan').innerText = db.kendaraan.length;
-
-      const totalBarang = db.inventaris.reduce((s, x) => {
-        const stok = Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0);
-        return s + stok;
-      }, 0);
-      document.getElementById('kpi-inventaris').innerText = totalBarang;
-
-      const uniqueAc = new Set(db.ac.map(x => x.kode_unit)).size;
-      document.getElementById('kpi-ac').innerText = uniqueAc;
-      const acServis = db.ac.filter(x => x.status === 'Proses' || x.status === 'RUSAK').length;
-      document.getElementById('kpi-ac-sub').innerText = `${acServis} jadwal perlu perhatian`;
-
-      const uniqueApar = new Set(db.apar.map(x => x.kode_apar)).size;
-      document.getElementById('kpi-apar').innerText = uniqueApar;
-      const aparSiap = db.apar.filter(x => x.status === 'BAIK').length;
-      document.getElementById('kpi-apar-sub').innerText = `${aparSiap} cek berstatus BAIK`;
-
-      renderRuangan();
-      renderKendaraan();
-      renderInventaris();
-      renderAc();
-      renderApar();
-      applyAdminUI();
-    }
-
-    function actionButtons(endpoint, id, nextStatusLabel, nextStatusObj) {
-      if (!isAdmin) return '';
-      return `
-        <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
-          <button onclick='updateItem("${endpoint}", ${id}, ${JSON.stringify(nextStatusObj)})' class="px-2.5 py-1 bg-sky-100 text-sky-700 rounded-lg font-bold hover:bg-sky-200 cursor-pointer">${nextStatusLabel}</button>
-          <button onclick='deleteItem("${endpoint}", ${id})' class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
-        </td>`;
-    }
-
-    function renderRuangan() {
-      const q = (document.getElementById('search-ruangan').value || '').toLowerCase();
-      const rows = db.ruangan.filter(r => `${r.ruangan} ${r.nama_peminjam} ${r.keperluan}`.toLowerCase().includes(q));
-      document.getElementById('tbody-ruangan').innerHTML = rows.length ? rows.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3.5 font-semibold">${r.tgl_pinjam || '-'}<br><span class="text-[11px] text-slate-400">${r.jam_mulai || '-'}</span></td>
-          <td class="p-3.5 font-bold text-slate-900">${r.ruangan || '-'}</td>
-          <td class="p-3.5">${r.nama_peminjam || '-'}</td>
-          <td class="p-3.5">${r.keperluan || '-'}</td>
-          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'Selesai' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}">${r.status || 'Disetujui'}</span></td>
-          ${actionButtons('/api/peminjaman-ruangan', r.id, 'Selesai', { status: 'Selesai' })}
-        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data peminjaman ruangan.</td></tr>`;
-    }
-
-    function renderKendaraan() {
-      const q = (document.getElementById('search-kendaraan').value || '').toLowerCase();
-      const rows = db.kendaraan.filter(r => `${r.kendaraan} ${r.nama_driver} ${r.tujuan}`.toLowerCase().includes(q));
-      document.getElementById('tbody-kendaraan').innerHTML = rows.length ? rows.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3.5 font-semibold">${r.tgl_pinjam || '-'}</td>
-          <td class="p-3.5 font-bold text-slate-900">${r.kendaraan || '-'}</td>
-          <td class="p-3.5">${r.nama_driver || '-'}</td>
-          <td class="p-3.5">${r.tujuan || '-'}</td>
-          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'Selesai' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}">${r.status || 'Disetujui'}</span></td>
-          ${actionButtons('/api/peminjaman-kendaraan', r.id, 'Selesai', { status: 'Selesai' })}
-        </tr>`).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data peminjaman kendaraan.</td></tr>`;
-    }
-
-    function renderInventaris() {
-      const q = (document.getElementById('search-inventaris').value || '').toLowerCase();
-      const rows = db.inventaris.filter(r => `${r.code} ${r.name} ${r.location}`.toLowerCase().includes(q));
-      document.getElementById('tbody-inventaris').innerHTML = rows.length ? rows.map(r => {
-        const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
-        return `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3.5 font-mono text-slate-500">${r.code || '-'}</td>
-          <td class="p-3.5 font-bold text-slate-900">${r.name || '-'}</td>
-          <td class="p-3.5">${r.location || '-'}</td>
-          <td class="p-3.5 font-bold">${stok} ${r.unit || 'Unit'}</td>
-          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${stok > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${stok > 0 ? 'Tersedia' : 'Habis'}</span></td>
-          ${isAdmin ? `<td class="p-3.5 text-right"><button onclick='deleteItem("/api/inventory", ${r.id})' class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 cursor-pointer"><i class="fa-solid fa-trash"></i></button></td>` : ''}
-        </tr>`;
-      }).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada data inventaris.</td></tr>`;
-    }
-
-    function renderAc() {
-      const q = (document.getElementById('search-ac').value || '').toLowerCase();
-      const rows = db.ac.filter(r => `${r.kode_unit} ${r.gedung} ${r.ruang} ${r.merk_ac}`.toLowerCase().includes(q));
-      document.getElementById('tbody-ac').innerHTML = rows.length ? rows.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3.5 font-mono font-bold text-sky-700">${r.kode_unit || '-'}</td>
-          <td class="p-3.5 font-bold text-slate-900">${r.gedung || ''} - ${r.ruang || r.lokasi || '-'}</td>
-          <td class="p-3.5">${r.merk_ac || '-'} (${r.kapasitas || '-'})</td>
-          <td class="p-3.5">${r.tgl_servis || '-'}</td>
-          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}">${r.status || 'Terjadwal'}</span></td>
-        </tr>`).join('') : `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada data AC.</td></tr>`;
-    }
-
-    function renderApar() {
-      const q = (document.getElementById('search-apar').value || '').toLowerCase();
-      const rows = db.apar.filter(r => `${r.kode_apar} ${r.gedung} ${r.titik_lokasi}`.toLowerCase().includes(q));
-      document.getElementById('tbody-apar').innerHTML = rows.length ? rows.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-3.5 font-mono font-bold text-rose-700">${r.kode_apar || '-'}</td>
-          <td class="p-3.5 font-bold text-slate-900">${r.gedung || ''} - ${r.titik_lokasi || '-'}</td>
-          <td class="p-3.5">${r.jenis_media || '-'} (${r.kapasitas || '-'})</td>
-          <td class="p-3.5">${r.tgl_kadaluarsa || '-'}</td>
-          <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${r.status || 'Terjadwal'}</span></td>
-        </tr>`).join('') : `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada data APAR.</td></tr>`;
-    }
-
-    async function submitForm(e, endpoint, modalId) {
-      e.preventDefault();
-      const payload = Object.fromEntries(new FormData(e.target).entries());
-      Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        e.target.reset();
-        closeModals();
-        showToast('Data berhasil disimpan!');
-        loadAllData(false);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        showToast('Gagal menyimpan data: ' + (err.error || res.status), true);
-      }
-    }
-
-    async function updateItem(endpoint, id, payload) {
-      await fetch(`${endpoint}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      showToast('Status diperbarui!');
-      loadAllData(false);
-    }
-
-    async function deleteItem(endpoint, id) {
-      if (!confirm('Hapus data ini secara permanen?')) return;
-      await fetch(`${endpoint}/${id}`, { method: 'DELETE' });
-      showToast('Data dihapus!');
-      loadAllData(false);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      applyAdminUI();
-      loadAllData(false);
-    });
-  </script>
-</body>
-</html>
+module.exports = app;

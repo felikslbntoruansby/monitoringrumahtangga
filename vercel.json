@@ -4,12 +4,44 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/rumah-tangga",
+      "dest": "/rumah-tangga.html"
+    },
+    {
+      "src": "/rumahtangga",
+      "dest": "/rumah-tangga.html"
+    },
+    {
+      "src": "/ac",
+      "dest": "/ac.html"
+    },
+    {
+      "src": "/unit-ac",
+      "dest": "/unit-ac.html"
+    },
+    {
+      "src": "/apar",
+      "dest": "/apar.html"
+    },
+    {
+      "src": "/unit-apar",
+      "dest": "/unit-apar.html"
+    },
+    {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "/$1"
     }
   ]
 }
