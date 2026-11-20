@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peminjaman Kendaraan Dinas - Poltekbang Surabaya</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+
+  <div class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+    <!-- HEADER -->
+    <div class="bg-gradient-to-r from-slate-900 via-emerald-900 to-emerald-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <a href="index.html" class="px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard
+          </a>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-200">MODUL 2 • RUMAH TANGGA</span>
+        </div>
+        <h1 class="text-2xl font-extrabold">Peminjaman Kendaraan Dinas</h1>
+        <p class="text-xs text-emerald-100 mt-1">Pengajuan kendaraan operasional, jadwal keberangkatan, penugasan driver, dan tujuan dinas.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleAdmin()" id="btnAdmin" class="px-4 py-2.5 bg-slate-900/60 hover:bg-slate-900 border border-white/20 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-lock text-amber-400"></i> Login Admin
+        </button>
+        <button onclick="openModal()" class="px-4 py-2.5 bg-white text-emerald-900 hover:bg-emerald-50 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow cursor-pointer">
+          <i class="fa-solid fa-plus"></i> Ajukan Kendaraan
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI SINGKAT -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Total Peminjaman</span>
+        <div id="kpi-total" class="text-2xl font-extrabold text-slate-900 mt-1">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-amber-600">Sedang Digunakan / Terjadwal</span>
+        <div id="kpi-aktif" class="text-2xl font-extrabold text-amber-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-emerald-600">Selesai Kembali</span>
+        <div id="kpi-selesai" class="text-2xl font-extrabold text-emerald-600 mt-1">0</div>
+      </div>
+    </div>
+
+    <!-- FILTER & TABEL -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <input type="search" id="searchBox" oninput="renderTable()" placeholder="Cari kendaraan, nopol, driver, atau tujuan..." class="w-full sm:w-96 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="loadData(true)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Tanggal</th>
+              <th class="p-3.5">Kendaraan & Nopol</th>
+              <th class="p-3.5">Driver / Pemohon</th>
+              <th class="p-3.5">Tujuan Perjalanan</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5 admin-col hidden text-right">Aksi Admin</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH PEMINJAMAN -->
+  <div id="modalForm" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="saveData(event)" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs shadow-xl">
+      <h3 class="text-base font-extrabold text-slate-900">Form Peminjaman Kendaraan Dinas</h3>
+      <div>
+        <label class="font-bold text-slate-600">Kendaraan & Nomor Polisi</label>
+        <input name="kendaraan" required placeholder="Contoh: Toyota Innova Reborn (L 1420 BP)" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Nama Driver / Pemohon</label>
+        <input name="nama_driver" required placeholder="Contoh: Pak Slamet / Unit Umum" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Tujuan Perjalanan</label>
+        <input name="tujuan" required placeholder="Contoh: Bandara Juanda T1 - Penjemputan Tamu" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Tanggal Penggunaan</label>
+        <input type="date" name="tgl_pinjam" required class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <input type="hidden" name="status" value="Disetujui">
+      <div class="flex justify-end gap-2 pt-3">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer">Simpan Data</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+  <script>
+    const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
+    const ADMIN_PIN = 'POLTEKBANG2026';
+    let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+    let rows = [];
+
+    function showToast(msg, isErr = false) {
+      const el = document.createElement('div');
+      el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+      el.innerText = msg;
+      document.getElementById('toast').appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+
+    function updateAdminUI() {
+      document.querySelectorAll('.admin-col').forEach(el => el.classList.toggle('hidden', !isAdmin));
+      document.getElementById('btnAdmin').innerHTML = isAdmin
+        ? `<i class="fa-solid fa-unlock text-emerald-400"></i> Admin Aktif (Logout)`
+        : `<i class="fa-solid fa-lock text-amber-400"></i> Login Admin`;
+    }
+
+    function toggleAdmin() {
+      if (isAdmin) {
+        isAdmin = false;
+        sessionStorage.removeItem('rt_admin');
+        updateAdminUI();
+        renderTable();
+        return showToast('Logout Admin berhasil');
+      }
+      const pin = prompt('Masukkan PIN Admin:');
+      if (pin === ADMIN_PIN) {
+        isAdmin = true;
+        sessionStorage.setItem('rt_admin', '1');
+        updateAdminUI();
+        renderTable();
+        showToast('Login Admin berhasil!');
+      } else if (pin) {
+        showToast('PIN salah!', true);
+      }
+    }
+
+    function openModal() { document.getElementById('modalForm').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('modalForm').classList.add('hidden'); }
+
+    async function loadData(notify = false) {
+      const { data, error } = await sb.from('peminjaman_kendaraan').select('*').order('id', { ascending: false });
+      if (error) return showToast('Gagal memuat: ' + error.message, true);
+      rows = data || [];
+      document.getElementById('kpi-total').innerText = rows.length;
+      document.getElementById('kpi-aktif').innerText = rows.filter(r => r.status !== 'Selesai').length;
+      document.getElementById('kpi-selesai').innerText = rows.filter(r => r.status === 'Selesai').length;
+      renderTable();
+      if (notify) showToast('Data kendaraan diperbarui!');
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('searchBox').value || '').toLowerCase();
+      const filtered = rows.filter(r => `${r.kendaraan} ${r.nama_driver} ${r.tujuan}`.toLowerCase().includes(q));
+      document.getElementById('tbody').innerHTML = filtered.length ? filtered.map(r => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3.5 font-semibold">${r.tgl_pinjam || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${r.kendaraan || '-'}</td>
+          <td class="p-3.5">${r.nama_driver || '-'}</td>
+          <td class="p-3.5">${r.tujuan || '-'}</td>
+          <td class="p-3.5">
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${r.status === 'Selesai' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}">
+              ${r.status || 'Disetujui'}
+            </span>
+          </td>
+          ${isAdmin ? `
+            <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
+              <button onclick="markDone(${r.id})" class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg font-bold hover:bg-emerald-200 cursor-pointer">Selesai</button>
+              <button onclick="delRow(${r.id})" class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+            </td>` : ''}
+        </tr>
+      `).join('') : `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada data peminjaman kendaraan.</td></tr>`;
+    }
+
+    async function saveData(e) {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(e.target).entries());
+      const { error } = await sb.from('peminjaman_kendaraan').insert([payload]);
+      if (error) return showToast('Gagal menyimpan: ' + error.message, true);
+      e.target.reset();
+      closeModal();
+      showToast('Peminjaman kendaraan berhasil disimpan!');
+      loadData(false);
+    }
+
+    async function markDone(id) {
+      const { error } = await sb.from('peminjaman_kendaraan').update({ status: 'Selesai' }).eq('id', id);
+      if (error) return showToast(error.message, true);
+      showToast('Status diperbarui menjadi Selesai!');
+      loadData(false);
+    }
+
+    async function delRow(id) {
+      if (!confirm('Hapus jadwal kendaraan ini?')) return;
+      const { error } = await sb.from('peminjaman_kendaraan').delete().eq('id', id);
+      if (error) return showToast(error.message, true);
+      showToast('Data dihapus!');
+      loadData(false);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAdminUI();
+      loadData(false);
+    });
+  </script>
+</body>
+</html>

@@ -24,19 +24,27 @@
       "dest": "/rumah-tangga.html"
     },
     {
-      "src": "/ac",
+      "src": "/kendaraan(\\.html)?",
+      "dest": "/kendaraan.html"
+    },
+    {
+      "src": "/inventaris(\\.html)?",
+      "dest": "/inventaris.html"
+    },
+    {
+      "src": "/ac(\\.html)?",
       "dest": "/ac.html"
     },
     {
-      "src": "/unit-ac",
+      "src": "/unit-ac(\\.html)?",
       "dest": "/unit-ac.html"
     },
     {
-      "src": "/apar",
+      "src": "/apar(\\.html)?",
       "dest": "/apar.html"
     },
     {
-      "src": "/unit-apar",
+      "src": "/unit-apar(\\.html)?",
       "dest": "/unit-apar.html"
     },
     {

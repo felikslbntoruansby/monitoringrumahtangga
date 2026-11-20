@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventaris Barang Rumah Tangga - Poltekbang Surabaya</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+
+  <div class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+    <!-- HEADER -->
+    <div class="bg-gradient-to-r from-slate-900 via-amber-900 to-amber-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <a href="index.html" class="px-3 py-1 bg-white/15 hover:bg-white/25 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard
+          </a>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-amber-200">MODUL 3 • RUMAH TANGGA</span>
+        </div>
+        <h1 class="text-2xl font-extrabold">Inventaris Barang & Logistik</h1>
+        <p class="text-xs text-amber-100 mt-1">Pendataan aset perlengkapan rumah tangga, lokasi gudang/ruangan, dan pencatatan mutasi stok.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="toggleAdmin()" id="btnAdmin" class="px-4 py-2.5 bg-slate-900/60 hover:bg-slate-900 border border-white/20 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-lock text-amber-400"></i> Login Admin
+        </button>
+        <button onclick="openModal('modalMutasi')" class="admin-only hidden px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow cursor-pointer">
+          <i class="fa-solid fa-right-left"></i> Catat Masuk / Keluar
+        </button>
+        <button onclick="openModal('modalBarang')" class="admin-only hidden px-4 py-2.5 bg-white text-amber-900 hover:bg-amber-50 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow cursor-pointer">
+          <i class="fa-solid fa-plus"></i> Tambah Barang Baru
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI SINGKAT -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Jenis Barang Terdata</span>
+        <div id="kpi-jenis" class="text-2xl font-extrabold text-slate-900 mt-1">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-emerald-600">Total Stok Tersedia</span>
+        <div id="kpi-stok" class="text-2xl font-extrabold text-emerald-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-200">
+        <span class="text-[11px] font-bold uppercase text-rose-600">Stok Habis / Kosong</span>
+        <div id="kpi-habis" class="text-2xl font-extrabold text-rose-600 mt-1">0</div>
+      </div>
+    </div>
+
+    <!-- TABEL INVENTARIS -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <input type="search" id="searchBox" oninput="renderTable()" placeholder="Cari kode barang, nama perlengkapan, atau lokasi..." class="w-full sm:w-96 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+        <button onclick="loadData(true)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
+            <tr>
+              <th class="p-3.5">Kode</th>
+              <th class="p-3.5">Nama Barang</th>
+              <th class="p-3.5">Lokasi Penempatan</th>
+              <th class="p-3.5 text-center">Awal</th>
+              <th class="p-3.5 text-center text-emerald-600">Masuk</th>
+              <th class="p-3.5 text-center text-rose-600">Keluar</th>
+              <th class="p-3.5 text-center">Stok Akhir</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5 admin-only hidden text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: TAMBAH BARANG -->
+  <div id="modalBarang" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="saveBarang(event)" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs shadow-xl">
+      <h3 class="text-base font-extrabold text-slate-900">Tambah Barang Inventaris Baru</h3>
+      <div>
+        <label class="font-bold text-slate-600">Kode Barang</label>
+        <input name="code" required placeholder="Contoh: INV-RT-002" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Nama Barang</label>
+        <input name="name" required placeholder="Contoh: Meja Rapat Kayu Jati" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Lokasi Penyimpanan / Ruangan</label>
+        <input name="location" required placeholder="Contoh: Gudang Sarpras Lt. 1" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="font-bold text-slate-600">Stok Awal</label>
+          <input type="number" name="initial" value="1" min="0" required class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+        </div>
+        <div>
+          <label class="font-bold text-slate-600">Satuan</label>
+          <input name="unit" value="Unit" required class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold cursor-pointer">Simpan Barang</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MODAL 2: MUTASI STOK MASUK / KELUAR -->
+  <div id="modalMutasi" class="modal-box fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
+    <form onsubmit="saveMutasi(event)" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 text-xs shadow-xl">
+      <h3 class="text-base font-extrabold text-slate-900">Catat Mutasi Stok (Masuk / Keluar)</h3>
+      <div>
+        <label class="font-bold text-slate-600">Pilih Barang</label>
+        <select id="selectBarang" name="inventory_id" required class="w-full border border-slate-300 rounded-xl p-2.5 mt-1"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="font-bold text-slate-600">Jenis Transaksi</label>
+          <select name="type" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+            <option value="IN">Barang Masuk (+)</option>
+            <option value="OUT">Barang Keluar (-)</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-bold text-slate-600">Jumlah</label>
+          <input type="number" name="quantity" min="1" value="1" required class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+        </div>
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Penanggung Jawab / Peminjam</label>
+        <input name="pic_name" required placeholder="Nama petugas / unit penerima" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div>
+        <label class="font-bold text-slate-600">Keterangan</label>
+        <input name="notes" placeholder="Catatan keperluan" class="w-full border border-slate-300 rounded-xl p-2.5 mt-1">
+      </div>
+      <div class="flex justify-end gap-2 pt-3">
+        <button type="button" onclick="closeModals()" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">Batal</button>
+        <button type="submit" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold cursor-pointer">Simpan Mutasi</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+  <script>
+    const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
+    const ADMIN_PIN = 'POLTEKBANG2026';
+    let isAdmin = sessionStorage.getItem('rt_admin') === '1';
+    let items = [];
+
+    function showToast(msg, isErr = false) {
+      const el = document.createElement('div');
+      el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+      el.innerText = msg;
+      document.getElementById('toast').appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
+
+    function updateAdminUI() {
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+      document.getElementById('btnAdmin').innerHTML = isAdmin
+        ? `<i class="fa-solid fa-unlock text-emerald-400"></i> Admin Aktif (Logout)`
+        : `<i class="fa-solid fa-lock text-amber-400"></i> Login Admin`;
+    }
+
+    function toggleAdmin() {
+      if (isAdmin) {
+        isAdmin = false;
+        sessionStorage.removeItem('rt_admin');
+        updateAdminUI();
+        renderTable();
+        return showToast('Logout Admin berhasil');
+      }
+      const pin = prompt('Masukkan PIN Admin:');
+      if (pin === ADMIN_PIN) {
+        isAdmin = true;
+        sessionStorage.setItem('rt_admin', '1');
+        updateAdminUI();
+        renderTable();
+        showToast('Login Admin berhasil!');
+      } else if (pin) {
+        showToast('PIN salah!', true);
+      }
+    }
+
+    function openModal(id) {
+      if (id === 'modalMutasi') {
+        document.getElementById('selectBarang').innerHTML = items.map(i => `<option value="${i.id}">${i.code} - ${i.name}</option>`).join('');
+      }
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModals() { document.querySelectorAll('.modal-box').forEach(m => m.classList.add('hidden')); }
+
+    async function loadData(notify = false) {
+      const { data, error } = await sb.from('inventory').select('*').order('id', { ascending: true });
+      if (error) return showToast('Gagal memuat: ' + error.message, true);
+      items = data || [];
+
+      let totalStok = 0, habisCount = 0;
+      items.forEach(x => {
+        const s = Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0);
+        totalStok += s;
+        if (s <= 0) habisCount++;
+      });
+
+      document.getElementById('kpi-jenis').innerText = items.length;
+      document.getElementById('kpi-stok').innerText = totalStok;
+      document.getElementById('kpi-habis').innerText = habisCount;
+      renderTable();
+      if (notify) showToast('Data inventaris diperbarui!');
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('searchBox').value || '').toLowerCase();
+      const filtered = items.filter(r => `${r.code} ${r.name} ${r.location}`.toLowerCase().includes(q));
+      document.getElementById('tbody').innerHTML = filtered.length ? filtered.map(r => {
+        const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3.5 font-mono text-slate-500">${r.code || '-'}</td>
+            <td class="p-3.5 font-bold text-slate-900">${r.name || '-'}</td>
+            <td class="p-3.5">${r.location || '-'}</td>
+            <td class="p-3.5 text-center">${r.initial || 0}</td>
+            <td class="p-3.5 text-center font-bold text-emerald-600">+${r.inQty || 0}</td>
+            <td class="p-3.5 text-center font-bold text-rose-600">-${r.outQty || 0}</td>
+            <td class="p-3.5 text-center font-extrabold text-slate-900">${stok} ${r.unit || 'Unit'}</td>
+            <td class="p-3.5">
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${stok > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                ${stok > 0 ? 'Tersedia' : 'Habis'}
+              </span>
+            </td>
+            ${isAdmin ? `
+              <td class="p-3.5 text-right">
+                <button onclick="delRow(${r.id})" class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-lg font-bold hover:bg-rose-200 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+              </td>` : ''}
+          </tr>`;
+      }).join('') : `<tr><td colspan="9" class="p-8 text-center text-slate-400">Belum ada data inventaris barang.</td></tr>`;
+    }
+
+    async function saveBarang(e) {
+      e.preventDefault();
+      const payload = Object.fromEntries(new FormData(e.target).entries());
+      payload.initial = Number(payload.initial || 0);
+      payload.inQty = 0;
+      payload.outQty = 0;
+
+      const { error } = await sb.from('inventory').insert([payload]);
+      if (error) return showToast('Gagal menyimpan: ' + error.message, true);
+      e.target.reset();
+      closeModals();
+      showToast('Barang baru berhasil ditambahkan!');
+      loadData(false);
+    }
+
+    async function saveMutasi(e) {
+      e.preventDefault();
+      const fd = Object.fromEntries(new FormData(e.target).entries());
+      const id = Number(fd.inventory_id);
+      const qty = Number(fd.quantity);
+      const item = items.find(x => x.id === id);
+      if (!item) return;
+
+      const newIn = fd.type === 'IN' ? (item.inQty || 0) + qty : (item.inQty || 0);
+      const newOut = fd.type === 'OUT' ? (item.outQty || 0) + qty : (item.outQty || 0);
+
+      const { error: updErr } = await sb.from('inventory').update({ inQty: newIn, outQty: newOut }).eq('id', id);
+      if (updErr) return showToast('Gagal update stok: ' + updErr.message, true);
+
+      await sb.from('logs').insert([{ inventory_id: id, type: fd.type, quantity: qty, pic_name: fd.pic_name, notes: fd.notes }]);
+      e.target.reset();
+      closeModals();
+      showToast('Mutasi stok berhasil dicatat!');
+      loadData(false);
+    }
+
+    async function delRow(id) {
+      if (!confirm('Hapus barang ini dari inventaris?')) return;
+      const { error } = await sb.from('inventory').delete().eq('id', id);
+      if (error) return showToast(error.message, true);
+      showToast('Barang dihapus!');
+      loadData(false);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAdminUI();
+      loadData(false);
+    });
+  </script>
+</body>
+</html>
