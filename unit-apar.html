@@ -23,11 +23,11 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-base leading-tight">Kartu Kendali Digital APAR</h1>
-                    <p class="text-[11px] text-red-100">Inspeksi & Monitoring Lapangan</p>
+                    <p class="text-[11px] text-red-100">Inspeksi & Lapor Kondisi Lapangan</p>
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
-                <button onclick="toggleAdmin()" id="btnAdmin" class="text-xs bg-slate-900/80 hover:bg-slate-950 px-2.5 py-1.5 rounded-lg font-bold border border-white/20">
+                <button onclick="toggleAdmin()" id="btnAdmin" class="text-xs bg-slate-900/80 hover:bg-slate-950 px-2.5 py-1.5 rounded-lg font-bold border border-white/20 cursor-pointer">
                     <i class="fas fa-lock text-amber-400"></i> Login
                 </button>
                 <a href="apar.html" class="text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
@@ -78,9 +78,16 @@
                 </div>
             </div>
 
+            <!-- TOMBOL LAPOR KERUSAKAN / KENDALA (PUBLIK / UMUM) -->
+            <div class="p-4 bg-white border-b border-slate-100">
+                <button onclick="openReportModal()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
+                    <i class="fas fa-exclamation-triangle text-base"></i> Lapor APAR Rusak / Expired / Tekanan Drop
+                </button>
+            </div>
+
             <!-- TOMBOL AKSI KHUSUS ADMIN -->
             <div class="admin-only hidden p-4 bg-slate-50">
-                <button onclick="openQuickCheck()" class="w-full py-3 bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm">
+                <button onclick="openQuickCheck()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
                     <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini (Admin)
                 </button>
             </div>
@@ -95,6 +102,43 @@
             <div id="scheduleList" class="space-y-2.5"></div>
         </div>
     </main>
+
+    <!-- MODAL LAPOR KERUSAKAN / KENDALA APAR (PUBLIK) -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
+        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-base text-rose-700"><i class="fas fa-exclamation-circle mr-1.5"></i>Lapor Kendala / Kerusakan APAR</h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+
+            <form id="reportForm" onsubmit="submitPublicReport(event)" class="space-y-3.5 text-sm">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pelapor / Unit Kerja *</label>
+                    <input type="text" id="repPelapor" required placeholder="Contoh: Taruna / Staf Bagian Umum" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Kendala / Kerusakan *</label>
+                    <select id="repKendala" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-semibold">
+                        <option value="Tekanan Drop / Jarum Merah">Jarum Tekanan Drop (Area Merah)</option>
+                        <option value="Segel / Pin Pengaman Putus">Segel / Pin Pengaman Putus / Hilang</option>
+                        <option value="Tabung Kadaluarsa / Perlu Refill">Masa Berlaku Habis / Perlu Refill</option>
+                        <option value="Selang / Nozzle / Tabung Rusak">Selang Retak / Tabung Berkarat / Rusak</option>
+                        <option value="APAR Sudah Digunakan">APAR Habis / Sudah Digunakan</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan Detail *</label>
+                    <textarea id="repCatatan" rows="3" required placeholder="Jelaskan kondisi tabung APAR yang ditemukan di lokasi..." class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
+                    <i class="fas fa-paper-plane mr-1"></i> Kirim Laporan Kerusakan
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL INPUT INSPEKSI LAPANGAN (ADMIN ONLY) -->
     <div id="checkModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
@@ -156,12 +200,14 @@
                     <textarea id="inpCatatan" rows="2" placeholder="Contoh: Kondisi bersih, posisi mudah dijangkau" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition">
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
                     <i class="fas fa-save mr-1"></i> Simpan Hasil Inspeksi
                 </button>
             </form>
         </div>
     </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
         const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
@@ -171,6 +217,14 @@
         const params = new URLSearchParams(window.location.search);
         const kodeApar = params.get('kode') || params.get('unit');
         let unitSchedules = [];
+
+        function showToast(msg, isErr = false) {
+            const el = document.createElement('div');
+            el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+            el.innerText = msg;
+            document.getElementById('toast').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
 
         function updateAdminUI() {
             document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
@@ -184,15 +238,16 @@
                 isAdmin = false;
                 sessionStorage.removeItem('rt_admin');
                 updateAdminUI();
-                return;
+                return showToast('Mode Admin dinonaktifkan');
             }
             const pin = prompt('Masukkan PIN Admin:');
             if (pin === ADMIN_PIN) {
                 isAdmin = true;
                 sessionStorage.setItem('rt_admin', '1');
                 updateAdminUI();
+                showToast('Login Admin berhasil!');
             } else if (pin) {
-                alert('PIN salah!');
+                showToast('PIN salah!', true);
             }
         }
 
@@ -267,8 +322,54 @@
             }).join('');
         }
 
+        function openReportModal() {
+            document.getElementById('reportModal').classList.remove('hidden');
+            document.getElementById('reportModal').classList.add('flex');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+            document.getElementById('reportModal').classList.remove('flex');
+        }
+
+        async function submitPublicReport(e) {
+            e.preventDefault();
+            const info = unitSchedules[0];
+            const today = new Date().toISOString().split('T')[0];
+            const kendala = document.getElementById('repKendala').value;
+            const pelapor = document.getElementById('repPelapor').value;
+            const catatan = document.getElementById('repCatatan').value;
+
+            const statusBaru = kendala.includes('Refill') ? 'PERLU REFILL' : 'RUSAK';
+            const tekananBaru = kendala.includes('Tekanan') ? 'Kurang / Merah' : 'Perlu Cek';
+
+            const { error } = await sb.from('apar').insert([{
+                kode_apar: info.kode_apar,
+                kategori_gedung: info.kategori_gedung,
+                gedung: info.gedung,
+                titik_lokasi: info.titik_lokasi,
+                merk: info.merk,
+                jenis_media: info.jenis_media,
+                kapasitas: info.kapasitas,
+                tgl_kadaluarsa: info.tgl_kadaluarsa,
+                tgl_inspeksi: today,
+                tekanan_bar: tekananBaru,
+                kondisi_fisik: kendala,
+                status: statusBaru,
+                petugas: `Laporan: ${pelapor}`,
+                catatan: `[${kendala}] ${catatan}`
+            }]);
+
+            if (error) return showToast('Gagal mengirim laporan: ' + error.message, true);
+
+            document.getElementById('reportForm').reset();
+            closeReportModal();
+            showToast('Laporan kerusakan APAR berhasil dikirim!');
+            loadUnitApar();
+        }
+
         function openQuickCheck() {
-            if (!isAdmin) return alert('Hanya Admin yang dapat mengisi hasil inspeksi APAR.');
+            if (!isAdmin) return showToast('Hanya Admin yang dapat mengisi hasil inspeksi APAR.', true);
             const select = document.getElementById('selectScheduleId');
             select.innerHTML = unitSchedules.map((s, idx) =>
                 `<option value="${s.id}">Cek ke-${idx + 1} (${s.tgl_inspeksi}) - [${s.status}]</option>`
@@ -292,7 +393,7 @@
 
         async function saveMobileInspection(e) {
             e.preventDefault();
-            if (!isAdmin) return alert('Akses ditolak!');
+            if (!isAdmin) return showToast('Akses ditolak!', true);
 
             const id = document.getElementById('selectScheduleId').value;
             const checkedFisik = Array.from(document.querySelectorAll('.chk-fisik:checked')).map(c => c.value).join(', ');
@@ -307,9 +408,10 @@
                 catatan: document.getElementById('inpCatatan').value
             }).eq('id', id);
 
-            if (error) return alert('Gagal menyimpan: ' + error.message);
+            if (error) return showToast('Gagal menyimpan: ' + error.message, true);
 
             closeCheckModal();
+            showToast('Hasil inspeksi APAR diperbarui!');
             loadUnitApar();
         }
 
