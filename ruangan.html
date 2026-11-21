@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peminjaman Ruangan & Aula - Poltekbang Surabaya</title>
+    <title>Peminjaman Ruangan- Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -23,16 +23,13 @@
                 </div>
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-widest text-blue-300">BIDANG UMUM • POLTEKBANG SBY</p>
-                    <h1 class="font-extrabold text-lg leading-tight">Peminjaman Ruangan & Aula</h1>
+                    <h1 class="font-extrabold text-lg leading-tight">Peminjaman Ruangan</h1>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
                 <a href="index.html" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
-                <button onclick="toggleAdmin()" id="btnAdmin" class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 font-bold flex items-center gap-1.5 transition cursor-pointer">
-                    <i class="fas fa-lock"></i> Mode Admin
-                </button>
             </div>
         </div>
     </nav>
@@ -125,11 +122,10 @@
                                 <th class="p-4">Ruangan</th>
                                 <th class="p-4">Peminjam & Kegiatan</th>
                                 <th class="p-4">Status</th>
-                                <th class="p-4 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman ruangan...</td></tr>
+                            <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman ruangan...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -142,8 +138,6 @@
 
     <script>
         const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
-        const ADMIN_PIN = 'POLTEKBANG2026';
-        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
         let allRows = [];
 
         function showToast(msg, isErr = false) {
@@ -152,37 +146,6 @@
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
             setTimeout(() => el.remove(), 4000);
-        }
-
-        function updateAdminUI() {
-            const btn = document.getElementById('btnAdmin');
-            if (isAdmin) {
-                btn.className = 'px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1.5 transition cursor-pointer';
-                btn.innerHTML = `<i class="fas fa-unlock"></i> Admin Aktif`;
-            } else {
-                btn.className = 'px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 font-bold flex items-center gap-1.5 transition cursor-pointer';
-                btn.innerHTML = `<i class="fas fa-lock"></i> Mode Admin`;
-            }
-        }
-
-        function toggleAdmin() {
-            if (isAdmin) {
-                isAdmin = false;
-                sessionStorage.removeItem('rt_admin');
-                updateAdminUI();
-                renderTable();
-                return showToast('Mode Admin dinonaktifkan');
-            }
-            const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
-            if (pin === ADMIN_PIN) {
-                isAdmin = true;
-                sessionStorage.setItem('rt_admin', '1');
-                updateAdminUI();
-                renderTable();
-                showToast('Login Admin berhasil!');
-            } else if (pin) {
-                showToast('PIN Admin salah!', true);
-            }
         }
 
         async function loadData() {
@@ -204,7 +167,7 @@
             const tbody = document.getElementById('tableBody');
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman ruangan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman ruangan.</td></tr>`;
                 return;
             }
 
@@ -212,14 +175,6 @@
                 const badge = r.status === 'Selesai'
                     ? 'bg-slate-100 text-slate-600'
                     : (r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800');
-
-                const aksiHtml = isAdmin
-                    ? `<div class="inline-flex items-center gap-1.5">
-                        ${r.status !== 'Disetujui' ? `<button onclick="setStatus(${r.id}, 'Disetujui')" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg font-bold cursor-pointer">Setujui</button>` : ''}
-                        ${r.status !== 'Selesai' ? `<button onclick="setStatus(${r.id}, 'Selesai')" class="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-bold cursor-pointer">Selesai</button>` : ''}
-                        <button onclick="deleteRow(${r.id})" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus"><i class="fas fa-trash"></i></button>
-                       </div>`
-                    : `<span class="text-slate-400 italic">Terkunci</span>`;
 
                 return `
                     <tr class="hover:bg-slate-50 transition">
@@ -233,9 +188,8 @@
                             <div class="text-[11px] text-slate-500 mt-0.5">${r.keperluan || '-'}</div>
                         </td>
                         <td class="p-4">
-                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${r.status || 'Disetujui'}</span>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${r.status || 'Menunggu Persetujuan'}</span>
                         </td>
-                        <td class="p-4 text-right whitespace-nowrap">${aksiHtml}</td>
                     </tr>
                 `;
             }).join('');
@@ -246,7 +200,7 @@
             const fd = new FormData(e.target);
             const payload = Object.fromEntries(fd.entries());
             if (!payload.tgl_selesai) delete payload.tgl_selesai;
-            payload.status = isAdmin ? 'Disetujui' : 'Menunggu Persetujuan';
+            payload.status = 'Menunggu Persetujuan';
 
             const { error } = await sb.from('peminjaman_ruangan').insert([payload]);
             if (error) return showToast('Gagal mengajukan: ' + error.message, true);
@@ -256,27 +210,7 @@
             loadData();
         }
 
-        async function setStatus(id, status) {
-            if (!isAdmin) return showToast('Login Admin terlebih dahulu!', true);
-            const { error } = await sb.from('peminjaman_ruangan').update({ status }).eq('id', id);
-            if (error) return showToast(error.message, true);
-            showToast(`Status diubah menjadi ${status}`);
-            loadData();
-        }
-
-        async function deleteRow(id) {
-            if (!isAdmin) return showToast('Login Admin terlebih dahulu!', true);
-            if (!confirm('Hapus jadwal peminjaman ruangan ini?')) return;
-            const { error } = await sb.from('peminjaman_ruangan').delete().eq('id', id);
-            if (error) return showToast(error.message, true);
-            showToast('Jadwal berhasil dihapus!');
-            loadData();
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateAdminUI();
-            loadData();
-        });
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>

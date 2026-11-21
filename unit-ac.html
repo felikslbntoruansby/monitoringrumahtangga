@@ -26,14 +26,9 @@
                     <p class="text-[11px] text-sky-100">Maintenance & Lapor Kerusakan Lapangan</p>
                 </div>
             </div>
-            <div class="flex items-center gap-1.5">
-                <button onclick="toggleAdmin()" id="btnAdmin" class="text-xs bg-slate-900/80 hover:bg-slate-950 px-2.5 py-1.5 rounded-lg font-bold border border-white/20">
-                    <i class="fas fa-lock text-amber-400"></i> Admin
-                </button>
-                <a href="ac.html" class="text-xs bg-sky-900 hover:bg-sky-950 px-2.5 py-1.5 rounded-lg font-medium">
-                    Matriks <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
+            <a href="ac.html" class="text-xs bg-sky-900 hover:bg-sky-950 px-2.5 py-1.5 rounded-lg font-medium">
+                Matriks <i class="fas fa-arrow-right ml-1"></i>
+            </a>
         </div>
     </header>
 
@@ -69,12 +64,9 @@
                 </div>
             </div>
 
-            <!-- TOMBOL AKSI CEPAT -->
-            <div class="p-4 bg-slate-50 flex flex-col sm:flex-row gap-2.5">
-                <button onclick="openActionModal('SERVIS')" class="admin-only hidden flex-1 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
-                    <i class="fas fa-tools"></i> Input Hasil Cuci/Servis
-                </button>
-                <button onclick="openActionModal('LAPOR')" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs">
+            <!-- TOMBOL LAPOR KELUHAN (PUBLIK) -->
+            <div class="p-4 bg-slate-50">
+                <button onclick="openActionModal()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs cursor-pointer">
                     <i class="fas fa-exclamation-triangle"></i> Lapor AC Rusak / Keluhan
                 </button>
             </div>
@@ -90,44 +82,26 @@
         </div>
     </main>
 
-    <!-- MODAL INPUT SERVIS / LAPOR RUSAK -->
+    <!-- MODAL LAPOR RUSAK -->
     <div id="actionModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
         <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <h3 id="modalTitle" class="font-bold text-base text-slate-800">Update Maintenance AC</h3>
+                <h3 class="font-bold text-base text-slate-800">Lapor Kerusakan / Keluhan AC</h3>
                 <button onclick="closeActionModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
             </div>
 
             <form id="mobileAcForm" onsubmit="saveMobileAc(event)" class="space-y-3.5 text-sm">
-                <input type="hidden" id="formMode" value="SERVIS">
-
-                <div id="scheduleSelectWrapper">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Jadwal Cuci AC</label>
-                    <select id="selectScheduleId" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
-                </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Pekerjaan / Keluhan *</label>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Keluhan *</label>
                     <select id="inpPekerjaan" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-                        <option value="Cuci AC Rutin">Cuci AC Rutin (Indoor & Outdoor)</option>
-                        <option value="Isi / Tambah Freon">Isi / Tambah Freon</option>
                         <option value="AC Tidak Dingin">Keluhan: AC Tidak Dingin</option>
                         <option value="AC Bocor Air">Keluhan: AC Menetes / Bocor Air</option>
                         <option value="AC Mati Total / Error">Keluhan: AC Mati Total / Error</option>
                     </select>
                 </div>
 
-                <div id="statusWrapper">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Status Kondisi Unit *</label>
-                    <select id="inpStatus" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
-                        <option value="BAIK">✅ BAIK (Dingin Normal)</option>
-                        <option value="Proses">🔧 PROSES PERBAIKAN</option>
-                        <option value="RUSAK">❌ RUSAK (Perlu Penanganan)</option>
-                    </select>
-                </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Teknisi / Pelapor *</label>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pelapor / Unit Kerja *</label>
                     <input type="text" id="inpTeknisi" required placeholder="Masukkan nama Anda..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
                 </div>
 
@@ -136,8 +110,8 @@
                     <textarea id="inpCatatan" rows="2" placeholder="Contoh: Ruang Rapat Lt. 2 AC tidak dingin" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition">
-                    <i class="fas fa-save mr-1"></i> Simpan Laporan
+                <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
+                    <i class="fas fa-paper-plane mr-1"></i> Kirim Laporan Keluhan
                 </button>
             </form>
         </div>
@@ -145,36 +119,9 @@
 
     <script>
         const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
-        const ADMIN_PIN = 'POLTEKBANG2026';
-        let isAdmin = sessionStorage.getItem('rt_admin') === '1';
-
         const params = new URLSearchParams(window.location.search);
         const kodeUnit = params.get('kode') || params.get('unit');
         let unitSchedules = [];
-
-        function updateAdminUI() {
-            document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
-            document.getElementById('btnAdmin').innerHTML = isAdmin
-                ? `<i class="fas fa-unlock text-emerald-400"></i> Admin`
-                : `<i class="fas fa-lock text-amber-400"></i> Login`;
-        }
-
-        function toggleAdmin() {
-            if (isAdmin) {
-                isAdmin = false;
-                sessionStorage.removeItem('rt_admin');
-                updateAdminUI();
-                return;
-            }
-            const pin = prompt('Masukkan PIN Admin:');
-            if (pin === ADMIN_PIN) {
-                isAdmin = true;
-                sessionStorage.setItem('rt_admin', '1');
-                updateAdminUI();
-            } else if (pin) {
-                alert('PIN salah!');
-            }
-        }
 
         async function loadUnitAc() {
             const statusBox = document.getElementById('statusBox');
@@ -242,76 +189,35 @@
             }).join('');
         }
 
-        function openActionModal(mode) {
-            document.getElementById('formMode').value = mode;
-            const selectWrap = document.getElementById('scheduleSelectWrapper');
-            const statusWrap = document.getElementById('statusWrapper');
-
-            if (mode === 'LAPOR') {
-                document.getElementById('modalTitle').textContent = 'Lapor Kerusakan / Keluhan AC';
-                selectWrap.classList.add('hidden');
-                statusWrap.classList.add('hidden');
-                document.getElementById('inpPekerjaan').value = 'AC Tidak Dingin';
-                document.getElementById('inpStatus').value = 'RUSAK';
-            } else {
-                if (!isAdmin) return alert('Hanya Admin yang dapat menginput hasil servis rutin.');
-                document.getElementById('modalTitle').textContent = 'Input Hasil Cuci / Servis AC';
-                selectWrap.classList.remove('hidden');
-                statusWrap.classList.remove('hidden');
-                const select = document.getElementById('selectScheduleId');
-                select.innerHTML = unitSchedules.map((s, idx) =>
-                    `<option value="${s.id}">Jadwal #${idx + 1} (${s.tgl_servis}) - [${s.status}]</option>`
-                ).join('');
-                const nextPending = unitSchedules.find(s => s.status === 'Terjadwal');
-                if (nextPending) select.value = nextPending.id;
-
-                document.getElementById('inpPekerjaan').value = 'Cuci AC Rutin';
-                document.getElementById('inpStatus').value = 'BAIK';
-            }
-
+        function openActionModal() {
             document.getElementById('actionModal').classList.remove('hidden');
             document.getElementById('actionModal').classList.add('flex');
         }
 
         async function saveMobileAc(e) {
             e.preventDefault();
-            const mode = document.getElementById('formMode').value;
             const today = new Date().toISOString().split('T')[0];
-
-            if (mode === 'LAPOR') {
-                const info = unitSchedules[0];
-                const { error } = await sb.from('maintenance_ac').insert([{
-                    kategori_gedung: info.kategori_gedung,
-                    kode_unit: info.kode_unit,
-                    gedung: info.gedung,
-                    lantai: info.lantai,
-                    ruang: info.ruang,
-                    lokasi: info.lokasi,
-                    merk_ac: info.merk_ac,
-                    type_ac: info.type_ac,
-                    kapasitas: info.kapasitas,
-                    freon: info.freon,
-                    tgl_servis: today,
-                    jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
-                    status: 'RUSAK',
-                    teknisi: document.getElementById('inpTeknisi').value,
-                    catatan: `[LAPORAN QR] ${document.getElementById('inpCatatan').value}`
-                }]);
-                if (error) return alert('Gagal mengirim laporan: ' + error.message);
-                alert('Laporan keluhan AC berhasil dikirim ke tim Rumah Tangga!');
-            } else {
-                if (!isAdmin) return alert('Akses ditolak!');
-                const id = document.getElementById('selectScheduleId').value;
-                const { error } = await sb.from('maintenance_ac').update({
-                    tgl_servis: today,
-                    jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
-                    status: document.getElementById('inpStatus').value,
-                    teknisi: document.getElementById('inpTeknisi').value,
-                    catatan: document.getElementById('inpCatatan').value
-                }).eq('id', id);
-                if (error) return alert('Gagal update: ' + error.message);
-            }
-
+            const info = unitSchedules[0];
+            const { error } = await sb.from('maintenance_ac').insert([{
+                kategori_gedung: info.kategori_gedung,
+                kode_unit: info.kode_unit,
+                gedung: info.gedung,
+                lantai: info.lantai,
+                ruang: info.ruang,
+                lokasi: info.lokasi,
+                merk_ac: info.merk_ac,
+                type_ac: info.type_ac,
+                kapasitas: info.kapasitas,
+                freon: info.freon,
+                tgl_servis: today,
+                jenis_pekerjaan: document.getElementById('inpPekerjaan').value,
+                status: 'RUSAK',
+                teknisi: document.getElementById('inpTeknisi').value,
+                catatan: `[LAPORAN QR] ${document.getElementById('inpCatatan').value}`
+            }]);
+            if (error) return alert('Gagal mengirim laporan: ' + error.message);
+            alert('Laporan keluhan AC berhasil dikirim ke tim Rumah Tangga!');
+            document.getElementById('mobileAcForm').reset();
             closeActionModal();
             loadUnitAc();
         }
@@ -321,10 +227,7 @@
             document.getElementById('actionModal').classList.remove('flex');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateAdminUI();
-            loadUnitAc();
-        });
+        document.addEventListener('DOMContentLoaded', loadUnitAc);
     </script>
 </body>
 </html>

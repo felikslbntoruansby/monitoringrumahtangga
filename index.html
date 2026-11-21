@@ -15,7 +15,7 @@
     <button onclick="toggleSidebar(true)" class="p-2 bg-slate-800 rounded-xl">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <span class="font-extrabold text-xs tracking-wide">SUB-BAGIAN RUMAH TANGGA</span>
+    <span class="font-extrabold text-xs tracking-wide"> RUMAH TANGGA</span>
     <span class="w-8"></span>
   </div>
 
@@ -74,11 +74,7 @@
       </nav>
     </div>
 
-    <div class="p-4 border-t border-slate-800 bg-slate-950/70 space-y-2.5">
-      <button onclick="toggleAdminMode()" id="btnAdminStatus" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
-        <i class="fa-solid fa-lock text-amber-400"></i>
-        <span>Login Admin (Kelola Data)</span>
-      </button>
+    <div class="p-4 border-t border-slate-800 bg-slate-950/70">
       <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
         <span class="flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Terhubung Supabase
@@ -203,10 +199,7 @@
   <script>
     const SUPABASE_URL = 'https://bxthbzzslipaoztvqupw.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0';
-    const ADMIN_PIN = 'POLTEKBANG2026';
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let isAdmin = sessionStorage.getItem('rt_admin') === '1';
 
     setInterval(() => {
       document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
@@ -223,33 +216,6 @@
       el.innerText = msg;
       document.getElementById('toast').appendChild(el);
       setTimeout(() => el.remove(), 4500);
-    }
-
-    function applyAdminUI() {
-      const btn = document.getElementById('btnAdminStatus');
-      btn.innerHTML = isAdmin
-        ? `<i class="fa-solid fa-unlock text-emerald-400"></i><span>Mode Admin Aktif (Logout)</span>`
-        : `<i class="fa-solid fa-lock text-amber-400"></i><span>Login Admin (Kelola Data)</span>`;
-    }
-
-    function toggleAdminMode() {
-      if (isAdmin) {
-        isAdmin = false;
-        sessionStorage.removeItem('rt_admin');
-        applyAdminUI();
-        showToast('Mode Admin dinonaktifkan');
-        return;
-      }
-      const pin = prompt('Masukkan PIN Admin Rumah Tangga:');
-      if (!pin) return;
-      if (pin === ADMIN_PIN) {
-        isAdmin = true;
-        sessionStorage.setItem('rt_admin', '1');
-        applyAdminUI();
-        showToast('Login Admin berhasil!');
-      } else {
-        showToast('PIN Admin salah!', true);
-      }
     }
 
     async function fetchTable(tableName) {
@@ -294,7 +260,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      applyAdminUI();
       loadAllData(false);
     });
   </script>
