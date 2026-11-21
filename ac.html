@@ -79,7 +79,7 @@
                 <button onclick="openAddModal()" class="admin-only hidden bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-plus"></i> Tambah Unit & Jadwal AC
                 </button>
-                <button onclick="printAllQR()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
+                <button onclick="printAllQR()" class="admin-only hidden bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-qrcode"></i> Cetak Stiker QR Gedung Ini
                 </button>
             </div>
@@ -593,6 +593,7 @@
         }
 
         function printAllQR() {
+            if (!isAdmin) return showToast('Akses ditolak! Login Admin terlebih dahulu.', true);
             const units = groupUnits(allAcRows.filter(r => r.kategori_gedung === currentTab));
             const area = document.getElementById('qrPrintArea');
             area.innerHTML = '';
