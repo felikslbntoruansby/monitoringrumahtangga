@@ -8,12 +8,20 @@
     {
       "src": "*.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/server.js"
+    },
+    {
+      "src": "/login(\\.html)?",
+      "dest": "/login.html"
     },
     {
       "src": "/rumahtangga(\\.html)?",
