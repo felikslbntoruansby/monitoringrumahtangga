@@ -10,6 +10,17 @@ let userRole = 'VIEWER';
 window.isAdminUser = false;
 window.isTeknisiUser = false;
 
+// Cek halaman yang diblokir untuk VIEWER sebelum path diubah ke '/'
+const _rawPath = window.location.pathname.split('/').pop().toLowerCase();
+const _isBlockedPageForViewer = VIEWER_BLOCKED_PAGES.some(
+  p => _rawPath === p || _rawPath === p.replace('.html', '')
+);
+
+// Sembunyikan nama file (.html / path menu) agar URL selalu monitoringrumahtangga.vercel.app
+if (window.location.pathname !== '/' && !window.location.search.includes('kode=')) {
+  window.history.replaceState(null, '', '/');
+}
+
 window.escapeHtml = function(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -61,8 +72,7 @@ function applyRoleUI(role) {
 }
 
 function isPageBlockedForRole(role) {
-  const currentPage = window.location.pathname.split('/').pop().toLowerCase();
-  return role === 'VIEWER' && VIEWER_BLOCKED_PAGES.some(p => currentPage === p || currentPage === p.replace('.html', ''));
+  return role === 'VIEWER' && _isBlockedPageForViewer;
 }
 
 const cachedRole = sessionStorage.getItem(ROLE_CACHE_KEY);
