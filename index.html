@@ -8,31 +8,39 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
+<body class="bg-[#F4F6F9] text-slate-800 min-h-screen antialiased">
 
   <!-- MOBILE TOPBAR -->
-  <div class="lg:hidden sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-md">
-    <button onclick="toggleSidebar(true)" class="p-2 bg-slate-800 rounded-xl">
+  <div class="lg:hidden sticky top-0 z-30 bg-[#0B2545] text-white px-4 py-3 flex items-center justify-between shadow-md border-b border-white/10">
+    <button onclick="toggleSidebar(true)" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <span class="font-extrabold text-xs tracking-wide">RUMAH TANGGA</span>
-    <button onclick="logoutApp()" class="text-xs text-rose-400 font-bold">Keluar</button>
+    <div class="flex items-center gap-2">
+      <img src="logo-poltekbang.png" alt="Logo" class="h-7 w-auto bg-white rounded px-1 py-0.5 object-contain">
+      <span class="font-extrabold text-xs tracking-wide">POLTEKBANG SURABAYA</span>
+    </div>
+    <button onclick="logoutApp()" class="text-xs text-rose-300 font-bold">Keluar</button>
   </div>
 
   <div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-200 z-50 flex flex-col justify-between border-r border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-64 bg-[#0B2545] text-slate-200 z-50 flex flex-col justify-between border-r border-[#163863] transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
     <div>
-      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+      <!-- IDENTITAS INSTANSI & LOGO -->
+      <div class="p-4 border-b border-white/10 flex items-center justify-between bg-[#081B33]">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg">
-            <i class="fa-solid fa-plane-up"></i>
+          <div class="w-11 h-11 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+            <img src="logo-poltekbang.png" alt="Logo Poltekbang Surabaya" class="max-h-full max-w-full object-contain">
           </div>
           <div>
-            <h1 class="text-sm font-extrabold text-white leading-tight">Rumah Tangga</h1>
-            <span class="text-[11px] text-slate-400">Poltekbang Surabaya</span>
+            <h1 class="text-xs font-extrabold text-white leading-tight uppercase tracking-wide">Rumah Tangga</h1>
+            <span class="text-[11px] font-medium text-amber-400 block mt-0.5">Poltekbang Surabaya</span>
           </div>
         </div>
         <button onclick="toggleSidebar(false)" class="lg:hidden text-slate-400 hover:text-white">
@@ -40,47 +48,54 @@
         </button>
       </div>
 
-      <nav class="p-4 space-y-1.5">
-        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">Menu Utama</div>
+      <!-- GARIS AKSEN 3 WARNA INSTANSI -->
+      <div class="h-1 w-full flex">
+        <div class="w-1/3 bg-[#14532D]"></div>
+        <div class="w-1/3 bg-[#D97706]"></div>
+        <div class="w-1/3 bg-sky-500"></div>
+      </div>
 
-        <a href="index.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-600 text-white shadow-md transition">
-          <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+      <nav class="p-3.5 space-y-1">
+        <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Navigasi Layanan</div>
+
+        <a href="index.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold bg-[#14532D] text-white border-l-4 border-amber-400 shadow-sm transition">
+          <i class="fa-solid fa-chart-pie w-4 text-center text-amber-300"></i>
           <span>Ringkasan Dashboard</span>
         </a>
 
-        <a href="ruangan.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="ruangan.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
           <i class="fa-solid fa-door-open w-4 text-center text-sky-400"></i>
           <span>1. Peminjaman Ruangan</span>
         </a>
 
-        <a href="kendaraan.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="kendaraan.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
           <i class="fa-solid fa-car-side w-4 text-center text-emerald-400"></i>
           <span>2. Peminjaman Kendaraan</span>
         </a>
 
-        <a href="inventaris.html" class="teknisi-only w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="inventaris.html" class="teknisi-only w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
           <i class="fa-solid fa-boxes-stacked w-4 text-center text-amber-400"></i>
           <span>3. Inventaris Barang</span>
         </a>
 
-        <a href="ac.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="ac.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
           <i class="fa-solid fa-snowflake w-4 text-center text-cyan-400"></i>
           <span>4. Data & QR Unit AC</span>
         </a>
 
-        <a href="apar.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="apar.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition">
           <i class="fa-solid fa-fire-extinguisher w-4 text-center text-rose-400"></i>
           <span>5. Data & QR APAR</span>
         </a>
       </nav>
     </div>
 
-    <div class="p-4 border-t border-slate-800 bg-slate-950/70 space-y-2.5">
+    <div class="p-4 border-t border-white/10 bg-[#081B33] space-y-2.5">
       <div class="flex items-center justify-between px-1">
         <div id="userBadge"></div>
-        <span id="clock" class="font-mono text-[11px] font-bold text-slate-300">--:--:--</span>
+        <span id="clock" class="font-mono text-[11px] font-bold text-slate-300 tabular-nums">--:--:--</span>
       </div>
-      <button onclick="logoutApp()" class="w-full py-2 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+      <button onclick="logoutApp()" class="w-full py-2 px-3 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
         <i class="fa-solid fa-right-from-bracket"></i> Keluar (Logout)
       </button>
     </div>
@@ -89,107 +104,131 @@
   <!-- KONTEN UTAMA -->
   <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
 
-    <!-- HEADER BANNER -->
-    <div class="bg-gradient-to-r from-slate-900 via-sky-900 to-sky-700 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <div>
-        <span class="text-[10px] font-bold uppercase tracking-widest text-sky-300">BIDANG UMUM • POLITEKNIK PENERBANGAN SURABAYA</span>
-        <h2 class="text-2xl font-extrabold mt-1">Ringkasan Layanan Rumah Tangga</h2>
-        <p class="text-xs text-sky-100/90 mt-1">Monitoring peminjaman ruangan, kendaraan dinas, inventaris, pemeliharaan AC, serta kesiapan APAR & Hydrant.</p>
+    <!-- HEADER INSTANSI (BERSIH & TEGAS) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div class="h-1.5 w-full flex">
+        <div class="w-1/3 bg-[#14532D]"></div>
+        <div class="w-1/3 bg-[#D97706]"></div>
+        <div class="w-1/3 bg-[#0B2545]"></div>
       </div>
-      <button onclick="loadAllData(true)" class="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer">
-        <i class="fa-solid fa-rotate"></i> Refresh Data
-      </button>
+      <div class="p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+          <div class="hidden sm:flex w-16 h-16 rounded-xl bg-slate-50 border border-slate-200 p-1.5 items-center justify-center shrink-0">
+            <img src="logo-poltekbang.png" alt="Logo Politeknik Penerbangan Surabaya" class="max-h-full max-w-full object-contain">
+          </div>
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#14532D]">
+              Subbagian Umum • Politeknik Penerbangan Surabaya
+            </span>
+            <h2 class="text-xl md:text-2xl font-extrabold text-[#0B2545] mt-0.5">
+              Ringkasan Layanan Rumah Tangga
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">
+              Monitoring peminjaman ruangan, kendaraan dinas, inventaris gudang, pemeliharaan AC, serta kesiapan APAR & Hydrant.
+            </p>
+          </div>
+        </div>
+        <button onclick="loadAllData(true)" class="px-4 py-2.5 bg-[#0B2545] hover:bg-[#133863] text-white rounded-lg text-xs font-bold flex items-center gap-2 transition cursor-pointer shrink-0">
+          <i class="fa-solid fa-rotate"></i> Refresh Data
+        </button>
+      </div>
     </div>
 
     <!-- KPI RINGKASAN -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <a href="ruangan.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-sky-400 hover:shadow-md transition">
+      <a href="ruangan.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-sky-600 shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-400">Peminjaman Ruangan</span>
-          <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center"><i class="fa-solid fa-door-open"></i></span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">Peminjaman Ruangan</span>
+          <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center"><i class="fa-solid fa-door-open"></i></span>
         </div>
-        <div id="kpi-ruangan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+        <div id="kpi-ruangan" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
         <div class="text-[11px] text-slate-500 mt-1">Total jadwal tercatat</div>
       </a>
 
-      <a href="kendaraan.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-emerald-400 hover:shadow-md transition">
+      <a href="kendaraan.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-[#14532D] shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-400">Kendaraan Dinas</span>
-          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-car-side"></i></span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">Kendaraan Dinas</span>
+          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-[#14532D] flex items-center justify-center"><i class="fa-solid fa-car-side"></i></span>
         </div>
-        <div id="kpi-kendaraan" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+        <div id="kpi-kendaraan" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
         <div class="text-[11px] text-slate-500 mt-1">Total penggunaan kendaraan</div>
       </a>
 
-      <a href="inventaris.html" class="teknisi-only block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-amber-400 hover:shadow-md transition">
+      <a href="inventaris.html" class="teknisi-only block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-amber-600 shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-400">Inventaris Barang</span>
-          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">Inventaris Barang</span>
+          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
         </div>
-        <div id="kpi-inventaris" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+        <div id="kpi-inventaris" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
         <div class="text-[11px] text-slate-500 mt-1">Total stok tersedia</div>
       </a>
 
-      <a href="ac.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-cyan-400 hover:shadow-md transition">
+      <a href="ac.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-cyan-600 shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-400">Unit AC Terdata</span>
-          <span class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center"><i class="fa-solid fa-snowflake"></i></span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">Unit AC Terdata</span>
+          <span class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-700 flex items-center justify-center"><i class="fa-solid fa-snowflake"></i></span>
         </div>
-        <div id="kpi-ac" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+        <div id="kpi-ac" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
         <div id="kpi-ac-sub" class="text-[11px] text-slate-500 mt-1">0 jadwal butuh perhatian</div>
       </a>
 
-      <a href="apar.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-rose-400 hover:shadow-md transition">
+      <a href="apar.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-rose-600 shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-400">APAR & Hydrant</span>
-          <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">APAR & Hydrant</span>
+          <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
         </div>
-        <div id="kpi-apar" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
+        <div id="kpi-apar" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
         <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 unit siap pakai</div>
       </a>
     </div>
 
     <!-- KARTU AKSES MODUL -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <a href="ruangan.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-sky-400 hover:shadow-md transition flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-door-open"></i></div>
-        <div>
-          <h3 class="font-bold text-slate-900 text-sm">1. Peminjaman Ruangan</h3>
-          <p class="text-xs text-slate-500 mt-1">Booking ruang rapat, aula, kelas, dan jadwal pemakaian fasilitas gedung.</p>
-        </div>
-      </a>
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Modul Operasional Unit Rumah Tangga</h3>
+      </div>
 
-      <a href="kendaraan.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md transition flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-car-side"></i></div>
-        <div>
-          <h3 class="font-bold text-slate-900 text-sm">2. Peminjaman Kendaraan</h3>
-          <p class="text-xs text-slate-500 mt-1">Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan driver.</p>
-        </div>
-      </a>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="ruangan.html" class="bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
+          <div class="w-11 h-11 rounded-lg bg-sky-50 border border-sky-100 text-sky-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-door-open"></i></div>
+          <div>
+            <h3 class="font-bold text-[#0B2545] text-sm">1. Peminjaman Ruangan</h3>
+            <p class="text-xs text-slate-500 mt-1">Booking ruang rapat, aula, kelas, dan jadwal pemakaian fasilitas gedung.</p>
+          </div>
+        </a>
 
-      <a href="inventaris.html" class="teknisi-only bg-white p-5 rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-boxes-stacked"></i></div>
-        <div>
-          <h3 class="font-bold text-slate-900 text-sm">3. Inventaris Barang</h3>
-          <p class="text-xs text-slate-500 mt-1">Lihat stok opname, catat pengambilan barang, dan kelola inventaris.</p>
-        </div>
-      </a>
+        <a href="kendaraan.html" class="bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
+          <div class="w-11 h-11 rounded-lg bg-emerald-50 border border-emerald-100 text-[#14532D] flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-car-side"></i></div>
+          <div>
+            <h3 class="font-bold text-[#0B2545] text-sm">2. Peminjaman Kendaraan</h3>
+            <p class="text-xs text-slate-500 mt-1">Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan driver.</p>
+          </div>
+        </a>
 
-      <a href="ac.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-cyan-400 hover:shadow-md transition flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-snowflake"></i></div>
-        <div>
-          <h3 class="font-bold text-slate-900 text-sm">4. Matriks & QR Unit AC</h3>
-          <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali AC per gedung, jadwal cuci rutin, dan kode QR unit.</p>
-        </div>
-      </a>
+        <a href="inventaris.html" class="teknisi-only bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
+          <div class="w-11 h-11 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <div>
+            <h3 class="font-bold text-[#0B2545] text-sm">3. Inventaris Barang</h3>
+            <p class="text-xs text-slate-500 mt-1">Lihat stok opname, catat pengambilan barang, dan kelola inventaris.</p>
+          </div>
+        </a>
 
-      <a href="apar.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-md transition flex items-start gap-4">
-        <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
-        <div>
-          <h3 class="font-bold text-slate-900 text-sm">5. Matriks & QR APAR</h3>
-          <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan kode QR.</p>
-        </div>
-      </a>
+        <a href="ac.html" class="bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
+          <div class="w-11 h-11 rounded-lg bg-cyan-50 border border-cyan-100 text-cyan-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-snowflake"></i></div>
+          <div>
+            <h3 class="font-bold text-[#0B2545] text-sm">4. Matriks & QR Unit AC</h3>
+            <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali AC per gedung, jadwal cuci rutin, dan kode QR unit.</p>
+          </div>
+        </a>
+
+        <a href="apar.html" class="bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
+          <div class="w-11 h-11 rounded-lg bg-rose-50 border border-rose-100 text-rose-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
+          <div>
+            <h3 class="font-bold text-[#0B2545] text-sm">5. Matriks & QR APAR</h3>
+            <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan kode QR.</p>
+          </div>
+        </a>
+      </div>
     </div>
 
   </main>
@@ -208,7 +247,7 @@
 
     function showToast(msg, isErr = false) {
       const el = document.createElement('div');
-      el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold break-words`;
+      el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-lg shadow-lg text-xs font-bold break-words`;
       el.innerText = msg;
       document.getElementById('toast').appendChild(el);
       setTimeout(() => el.remove(), 4500);
