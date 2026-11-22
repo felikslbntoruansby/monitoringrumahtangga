@@ -77,17 +77,17 @@
                 </div>
             </div>
 
-            <!-- TOMBOL LAPOR KERUSAKAN (VIEWER & ADMIN BISA ISI) -->
+            <!-- TOMBOL LAPOR KERUSAKAN (SEMUA ROLE BISA ISI) -->
             <div class="p-4 bg-white border-b border-slate-100">
                 <button onclick="openReportModal()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
                     <i class="fas fa-exclamation-triangle text-base"></i> Lapor APAR Rusak / Expired / Tekanan Drop
                 </button>
             </div>
 
-            <!-- TOMBOL INPUT HASIL INSPEKSI (KHUSUS ADMIN) -->
-            <div class="admin-only p-4 bg-slate-50">
+            <!-- TOMBOL INPUT HASIL INSPEKSI (TEKNISI & ADMIN) -->
+            <div class="teknisi-only p-4 bg-slate-50">
                 <button onclick="openQuickCheck()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
-                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini (Admin)
+                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini
                 </button>
             </div>
         </div>
@@ -138,7 +138,7 @@
         </div>
     </div>
 
-    <!-- MODAL INPUT INSPEKSI (ADMIN ONLY) -->
+    <!-- MODAL INPUT INSPEKSI (TEKNISI & ADMIN) -->
     <div id="checkModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
         <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -338,7 +338,7 @@
         }
 
         function openQuickCheck() {
-            if (!window.isAdminUser) return;
+            if (!window.isTeknisiUser) return;
             const select = document.getElementById('selectScheduleId');
             select.innerHTML = unitSchedules.map((s, idx) =>
                 `<option value="${s.id}">Cek ke-${idx + 1} (${s.tgl_inspeksi}) - [${s.status}]</option>`
@@ -362,7 +362,7 @@
 
         async function saveMobileInspection(e) {
             e.preventDefault();
-            if (!window.isAdminUser) return;
+            if (!window.isTeknisiUser) return;
 
             const id = document.getElementById('selectScheduleId').value;
             const checkedFisik = Array.from(document.querySelectorAll('.chk-fisik:checked')).map(c => c.value).join(', ');

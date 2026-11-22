@@ -70,7 +70,7 @@
 
             <!-- TOMBOL AKSI -->
             <div class="p-4 bg-slate-50 flex flex-col sm:flex-row gap-2.5">
-                <button onclick="openActionModal('SERVIS')" class="admin-only flex-1 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs cursor-pointer">
+                <button onclick="openActionModal('SERVIS')" class="teknisi-only flex-1 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs cursor-pointer">
                     <i class="fas fa-tools"></i> Input Hasil Cuci/Servis
                 </button>
                 <button onclick="openActionModal('LAPOR')" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 text-xs cursor-pointer">
@@ -224,7 +224,7 @@
                 document.getElementById('inpPekerjaan').value = 'AC Tidak Dingin';
                 document.getElementById('inpStatus').value = 'RUSAK';
             } else {
-                if (!window.isAdminUser) return;
+                if (!window.isTeknisiUser) return;
                 document.getElementById('modalTitle').textContent = 'Input Hasil Cuci / Servis AC';
                 selectWrap.classList.remove('hidden');
                 statusWrap.classList.remove('hidden');
@@ -270,7 +270,7 @@
                 if (error) return alert('Gagal mengirim laporan: ' + error.message);
                 alert('Laporan keluhan AC berhasil dikirim!');
             } else {
-                if (!window.isAdminUser) return;
+                if (!window.isTeknisiUser) return;
                 const id = document.getElementById('selectScheduleId').value;
                 const { error } = await sb.from('maintenance_ac').update({
                     tgl_servis: today,
