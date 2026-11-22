@@ -63,12 +63,12 @@
           <span>3. Inventaris Barang</span>
         </a>
 
-        <a href="ac.html" class="admin-only w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="ac.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
           <i class="fa-solid fa-snowflake w-4 text-center text-cyan-400"></i>
           <span>4. Data & QR Unit AC</span>
         </a>
 
-        <a href="apar.html" class="admin-only w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+        <a href="apar.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
           <i class="fa-solid fa-fire-extinguisher w-4 text-center text-rose-400"></i>
           <span>5. Data & QR APAR</span>
         </a>
@@ -121,7 +121,7 @@
         <div class="text-[11px] text-slate-500 mt-1">Total penggunaan kendaraan</div>
       </a>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+      <div class="admin-only bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-bold uppercase text-slate-400">Inventaris Barang</span>
           <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
@@ -130,23 +130,23 @@
         <div class="text-[11px] text-slate-500 mt-1">Total stok tersedia</div>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+      <a href="ac.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-cyan-400 hover:shadow-md transition">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-bold uppercase text-slate-400">Unit AC Terdata</span>
           <span class="w-8 h-8 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center"><i class="fa-solid fa-snowflake"></i></span>
         </div>
         <div id="kpi-ac" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
         <div id="kpi-ac-sub" class="text-[11px] text-slate-500 mt-1">0 jadwal butuh perhatian</div>
-      </div>
+      </a>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+      <a href="apar.html" class="block bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-rose-400 hover:shadow-md transition">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-bold uppercase text-slate-400">APAR & Hydrant</span>
           <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
         </div>
         <div id="kpi-apar" class="text-3xl font-extrabold text-slate-900 mt-3">0</div>
         <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 unit siap pakai</div>
-      </div>
+      </a>
     </div>
 
     <!-- KARTU AKSES MODUL -->
@@ -175,19 +175,19 @@
         </div>
       </a>
 
-      <a href="ac.html" class="admin-only bg-white p-5 rounded-2xl border border-slate-200 hover:border-cyan-400 hover:shadow-md transition flex items-start gap-4">
+      <a href="ac.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-cyan-400 hover:shadow-md transition flex items-start gap-4">
         <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-snowflake"></i></div>
         <div>
           <h3 class="font-bold text-slate-900 text-sm">4. Matriks & QR Unit AC</h3>
-          <p class="text-xs text-slate-500 mt-1">Buka kartu kendali AC per gedung, jadwal cuci rutin, dan cetak stiker QR.</p>
+          <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali AC per gedung, jadwal cuci rutin, dan kode QR unit.</p>
         </div>
       </a>
 
-      <a href="apar.html" class="admin-only bg-white p-5 rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-md transition flex items-start gap-4">
+      <a href="apar.html" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-md transition flex items-start gap-4">
         <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
         <div>
           <h3 class="font-bold text-slate-900 text-sm">5. Matriks & QR APAR</h3>
-          <p class="text-xs text-slate-500 mt-1">Buka kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan stiker QR.</p>
+          <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan kode QR.</p>
         </div>
       </a>
     </div>
@@ -233,10 +233,13 @@
         document.getElementById('kpi-ruangan').innerText = ruangan.length;
         document.getElementById('kpi-kendaraan').innerText = kendaraan.length;
 
-        const totalBarang = inventaris.reduce((s, x) => {
-          return s + (Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0));
-        }, 0);
-        document.getElementById('kpi-inventaris').innerText = totalBarang;
+        const kpiInv = document.getElementById('kpi-inventaris');
+        if (kpiInv) {
+          const totalBarang = inventaris.reduce((s, x) => {
+            return s + (Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0));
+          }, 0);
+          kpiInv.innerText = totalBarang;
+        }
 
         const uniqueAc = new Set(ac.map(x => x.kode_unit)).size;
         document.getElementById('kpi-ac').innerText = uniqueAc;
