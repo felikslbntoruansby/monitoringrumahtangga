@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" style="visibility:hidden;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-guard.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen antialiased">
 
@@ -22,6 +23,12 @@
         </div>
         <h1 class="text-2xl font-extrabold">Inventaris Barang & Logistik</h1>
         <p class="text-xs text-amber-100 mt-1">Pendataan aset perlengkapan rumah tangga, lokasi gudang/ruangan, dan pencatatan mutasi stok.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <div id="userBadge"></div>
+        <button onclick="logoutApp()" class="px-3 py-2 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition cursor-pointer">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+        </button>
       </div>
     </div>
 
@@ -72,7 +79,6 @@
   <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
   <script>
-    const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
     let items = [];
 
     function showToast(msg, isErr = false) {

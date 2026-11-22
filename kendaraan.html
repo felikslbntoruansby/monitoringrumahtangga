@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" style="visibility:hidden;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -27,9 +28,13 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <div id="userBadge"></div>
                 <a href="index.html" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
+                <button onclick="logoutApp()" class="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white transition cursor-pointer">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -42,7 +47,7 @@
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Booking Kendaraan</p>
                 <p id="statTotal" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p>
-                <p class="text-[11px] text-slate-400 mt-1">Total Perjalanan </p>
+                <p class="text-[11px] text-slate-400 mt-1">Total Perjalanan</p>
             </div>
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Kendaraan Berangkat Hari Ini</p>
@@ -59,7 +64,7 @@
         <!-- GRID FORM & TABEL KENDARAAN -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- FORM BOOKING KENDARAAN (KIRI) -->
+            <!-- FORM BOOKING KENDARAAN (ADMIN & VIEWER BISA ISI) -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
                 <h2 class="font-extrabold text-base text-slate-900 mb-4 flex items-center gap-2">
                     <i class="fas fa-car-side text-emerald-600"></i> Form Booking Kendaraan
@@ -115,7 +120,7 @@
                 </form>
             </div>
 
-            <!-- DAFTAR JADWAL PEMINJAMAN KENDARAAN (KANAN) -->
+            <!-- DAFTAR JADWAL PEMINJAMAN KENDARAAN -->
             <div class="lg:col-span-8 bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h2 class="font-extrabold text-base text-slate-900">Daftar Jadwal Peminjaman Kendaraan</h2>
@@ -131,10 +136,11 @@
                                 <th class="p-4">Kendaraan & Driver</th>
                                 <th class="p-4">Pemohon & Tujuan</th>
                                 <th class="p-4">Status</th>
+                                <th class="p-4 admin-only text-right">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman kendaraan...</td></tr>
+                            <tr><td colspan="5" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman kendaraan...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -146,7 +152,6 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
-        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
         let allRows = [];
 
         function showToast(msg, isErr = false) {
@@ -176,7 +181,7 @@
             const tbody = document.getElementById('tableBody');
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman kendaraan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman kendaraan.</td></tr>`;
                 return;
             }
 
@@ -184,6 +189,16 @@
                 const badge = r.status === 'Selesai'
                     ? 'bg-slate-100 text-slate-600'
                     : (r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800');
+
+                const aksiHtml = window.isAdminUser
+                    ? `<td class="p-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1.5">
+                            ${r.status !== 'Disetujui' ? `<button onclick="setStatus(${r.id}, 'Disetujui')" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg font-bold cursor-pointer">Setujui</button>` : ''}
+                            ${r.status !== 'Selesai' ? `<button onclick="setStatus(${r.id}, 'Selesai')" class="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-bold cursor-pointer">Selesai</button>` : ''}
+                            <button onclick="deleteRow(${r.id})" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus"><i class="fas fa-trash"></i></button>
+                        </div>
+                       </td>`
+                    : '';
 
                 return `
                     <tr class="hover:bg-slate-50 transition">
@@ -202,6 +217,7 @@
                         <td class="p-4">
                             <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${r.status || 'Menunggu Persetujuan'}</span>
                         </td>
+                        ${aksiHtml}
                     </tr>
                 `;
             }).join('');
@@ -212,13 +228,30 @@
             const fd = new FormData(e.target);
             const payload = Object.fromEntries(fd.entries());
             if (!payload.tgl_kembali) delete payload.tgl_kembali;
-            payload.status = 'Menunggu Persetujuan';
+            payload.status = window.isAdminUser ? 'Disetujui' : 'Menunggu Persetujuan';
 
             const { error } = await sb.from('peminjaman_kendaraan').insert([payload]);
             if (error) return showToast('Gagal mengajukan: ' + error.message, true);
 
             e.target.reset();
             showToast('Pengajuan peminjaman kendaraan berhasil dikirim!');
+            loadData();
+        }
+
+        async function setStatus(id, status) {
+            if (!window.isAdminUser) return;
+            const { error } = await sb.from('peminjaman_kendaraan').update({ status }).eq('id', id);
+            if (error) return showToast(error.message, true);
+            showToast(`Status diubah menjadi ${status}`);
+            loadData();
+        }
+
+        async function deleteRow(id) {
+            if (!window.isAdminUser) return;
+            if (!confirm('Hapus jadwal peminjaman kendaraan ini?')) return;
+            const { error } = await sb.from('peminjaman_kendaraan').delete().eq('id', id);
+            if (error) return showToast(error.message, true);
+            showToast('Jadwal berhasil dihapus!');
             loadData();
         }
 

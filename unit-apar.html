@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" style="visibility:hidden;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -26,21 +27,24 @@
                     <p class="text-[11px] text-red-100">Inspeksi & Lapor Kondisi Lapangan</p>
                 </div>
             </div>
-            <a href="apar.html" class="text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
-                Matriks <i class="fas fa-arrow-right ml-1"></i>
-            </a>
+            <div class="flex items-center gap-1.5">
+                <a href="index.html" class="text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
+                    <i class="fas fa-home"></i>
+                </a>
+                <a href="apar.html" class="admin-only text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
+                    Matriks <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
         </div>
     </header>
 
     <main class="max-w-lg mx-auto px-4 pt-4 space-y-4">
 
-        <!-- LOADING / ERROR STATE -->
         <div id="statusBox" class="bg-white p-6 rounded-2xl shadow-sm text-center text-slate-500 text-sm">
             <i class="fas fa-spinner fa-spin text-red-600 text-xl mb-2"></i>
             <p>Memuat identitas tabung APAR...</p>
         </div>
 
-        <!-- KARTU IDENTITAS TABUNG -->
         <div id="unitCard" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white p-4 flex justify-between items-start">
                 <div>
@@ -73,15 +77,21 @@
                 </div>
             </div>
 
-            <!-- TOMBOL LAPOR KERUSAKAN / KENDALA (PUBLIK / UMUM) -->
-            <div class="p-4 bg-white">
+            <!-- TOMBOL LAPOR KERUSAKAN (VIEWER & ADMIN BISA ISI) -->
+            <div class="p-4 bg-white border-b border-slate-100">
                 <button onclick="openReportModal()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
                     <i class="fas fa-exclamation-triangle text-base"></i> Lapor APAR Rusak / Expired / Tekanan Drop
                 </button>
             </div>
+
+            <!-- TOMBOL INPUT HASIL INSPEKSI (KHUSUS ADMIN) -->
+            <div class="admin-only p-4 bg-slate-50">
+                <button onclick="openQuickCheck()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
+                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini (Admin)
+                </button>
+            </div>
         </div>
 
-        <!-- RIWAYAT & JADWAL INSPEKSI 12 BULAN -->
         <div id="historySection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
             <h3 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
                 <span><i class="fas fa-history text-red-600 mr-1.5"></i> Jadwal & Riwayat Inspeksi</span>
@@ -91,7 +101,7 @@
         </div>
     </main>
 
-    <!-- MODAL LAPOR KERUSAKAN / KENDALA APAR (PUBLIK) -->
+    <!-- MODAL LAPOR KERUSAKAN APAR -->
     <div id="reportModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
         <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -128,10 +138,76 @@
         </div>
     </div>
 
+    <!-- MODAL INPUT INSPEKSI (ADMIN ONLY) -->
+    <div id="checkModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
+        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-base text-slate-800">Form Checklist Inspeksi APAR</h3>
+                <button onclick="closeCheckModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+
+            <form id="mobileInspectForm" onsubmit="saveMobileInspection(event)" class="space-y-3.5 text-sm">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Jadwal Bulan Inspeksi</label>
+                    <select id="selectScheduleId" onchange="onSelectSchedule()" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Jarum Tekanan (Pressure Gauge) *</label>
+                    <select id="inpTekanan" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                        <option value="Normal / Hijau">🟢 Normal / Area Hijau</option>
+                        <option value="Kurang / Merah">🔴 Kurang / Area Merah (Drop)</option>
+                        <option value="Overcharge">🟡 Overcharge (Berlebih)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Checklist Kondisi Fisik</label>
+                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Pin & Segel Utuh" checked>
+                            <span>Pin pengaman & segel plastik masih utuh</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Selang & Nozzle Baik" checked>
+                            <span>Selang (hose) & corong tidak retak / tersumbat</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Tabung Dibalik/Dikocok" checked>
+                            <span>Tabung sudah dibalik/dikocok (mencegah serbuk menggumpal)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Kesimpulan Status APAR *</label>
+                    <select id="inpStatus" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
+                        <option value="BAIK">✅ BAIK (Siap Pakai)</option>
+                        <option value="PERLU REFILL">⚠️ PERLU REFILL (Isi Ulang)</option>
+                        <option value="RUSAK">❌ RUSAK (Tarik / Ganti Unit)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Petugas K3 / Teknisi *</label>
+                    <input type="text" id="inpPetugas" required placeholder="Masukkan nama Anda..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Catatan Tambahan (Opsional)</label>
+                    <textarea id="inpCatatan" rows="2" placeholder="Contoh: Kondisi bersih, posisi mudah dijangkau" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
+                    <i class="fas fa-save mr-1"></i> Simpan Hasil Inspeksi
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
-        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
         const params = new URLSearchParams(window.location.search);
         const kodeApar = params.get('kode') || params.get('unit');
         let unitSchedules = [];
@@ -259,6 +335,58 @@
             closeReportModal();
             showToast('Laporan kerusakan APAR berhasil dikirim!');
             loadUnitApar();
+        }
+
+        function openQuickCheck() {
+            if (!window.isAdminUser) return;
+            const select = document.getElementById('selectScheduleId');
+            select.innerHTML = unitSchedules.map((s, idx) =>
+                `<option value="${s.id}">Cek ke-${idx + 1} (${s.tgl_inspeksi}) - [${s.status}]</option>`
+            ).join('');
+
+            const nextPending = unitSchedules.find(s => s.status === 'Terjadwal');
+            if (nextPending) select.value = nextPending.id;
+
+            onSelectSchedule();
+            document.getElementById('checkModal').classList.remove('hidden');
+            document.getElementById('checkModal').classList.add('flex');
+        }
+
+        function onSelectSchedule() {
+            const id = document.getElementById('selectScheduleId').value;
+            const item = unitSchedules.find(s => String(s.id) === String(id));
+            if (!item) return;
+            document.getElementById('inpPetugas').value = item.petugas || '';
+            document.getElementById('inpCatatan').value = item.catatan || '';
+        }
+
+        async function saveMobileInspection(e) {
+            e.preventDefault();
+            if (!window.isAdminUser) return;
+
+            const id = document.getElementById('selectScheduleId').value;
+            const checkedFisik = Array.from(document.querySelectorAll('.chk-fisik:checked')).map(c => c.value).join(', ');
+            const today = new Date().toISOString().split('T')[0];
+
+            const { error } = await sb.from('apar').update({
+                tgl_inspeksi: today,
+                tekanan_bar: document.getElementById('inpTekanan').value,
+                kondisi_fisik: checkedFisik || 'Dicek lapangan',
+                status: document.getElementById('inpStatus').value,
+                petugas: document.getElementById('inpPetugas').value,
+                catatan: document.getElementById('inpCatatan').value
+            }).eq('id', id);
+
+            if (error) return showToast('Gagal menyimpan: ' + error.message, true);
+
+            closeCheckModal();
+            showToast('Hasil inspeksi APAR diperbarui!');
+            loadUnitApar();
+        }
+
+        function closeCheckModal() {
+            document.getElementById('checkModal').classList.add('hidden');
+            document.getElementById('checkModal').classList.remove('flex');
         }
 
         document.addEventListener('DOMContentLoaded', loadUnitApar);

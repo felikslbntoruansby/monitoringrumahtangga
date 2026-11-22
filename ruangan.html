@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" style="visibility:hidden;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peminjaman Ruangan- Poltekbang Surabaya</title>
+    <title>Peminjaman Ruangan - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
@@ -27,9 +28,13 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <div id="userBadge"></div>
                 <a href="index.html" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
+                <button onclick="logoutApp()" class="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white transition cursor-pointer">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -59,7 +64,7 @@
         <!-- GRID FORM & TABEL RUANGAN -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- FORM BOOKING RUANGAN (KIRI) -->
+            <!-- FORM BOOKING RUANGAN (ADMIN & VIEWER BISA ISI) -->
             <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
                 <h2 class="font-extrabold text-base text-slate-900 mb-4 flex items-center gap-2">
                     <i class="fas fa-calendar-plus text-blue-600"></i> Form Booking Ruangan
@@ -67,7 +72,7 @@
                 <form id="bookingForm" onsubmit="submitBooking(event)" class="space-y-3.5 text-xs">
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Nama Peminjam / Unit Kerja *</label>
-                        <input type="text" name="nama_peminjam" required placeholder="Contoh: Prodi TPU / Bagian Akademik"
+                        <input type="text" name="nama_peminjam" required placeholder="Contoh: Prodi TPU / Akademik"
                             class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <div>
@@ -106,7 +111,7 @@
                 </form>
             </div>
 
-            <!-- DAFTAR JADWAL PEMINJAMAN RUANGAN (KANAN) -->
+            <!-- DAFTAR JADWAL PEMINJAMAN RUANGAN -->
             <div class="lg:col-span-8 bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h2 class="font-extrabold text-base text-slate-900">Daftar Jadwal Peminjaman Ruangan</h2>
@@ -122,10 +127,11 @@
                                 <th class="p-4">Ruangan</th>
                                 <th class="p-4">Peminjam & Kegiatan</th>
                                 <th class="p-4">Status</th>
+                                <th class="p-4 admin-only text-right">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman ruangan...</td></tr>
+                            <tr><td colspan="5" class="p-8 text-center text-slate-400">Memuat jadwal peminjaman ruangan...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -137,7 +143,6 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
-        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
         let allRows = [];
 
         function showToast(msg, isErr = false) {
@@ -167,7 +172,7 @@
             const tbody = document.getElementById('tableBody');
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman ruangan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Belum ada jadwal peminjaman ruangan.</td></tr>`;
                 return;
             }
 
@@ -175,6 +180,16 @@
                 const badge = r.status === 'Selesai'
                     ? 'bg-slate-100 text-slate-600'
                     : (r.status === 'Disetujui' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800');
+
+                const aksiHtml = window.isAdminUser
+                    ? `<td class="p-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1.5">
+                            ${r.status !== 'Disetujui' ? `<button onclick="setStatus(${r.id}, 'Disetujui')" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg font-bold cursor-pointer">Setujui</button>` : ''}
+                            ${r.status !== 'Selesai' ? `<button onclick="setStatus(${r.id}, 'Selesai')" class="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-bold cursor-pointer">Selesai</button>` : ''}
+                            <button onclick="deleteRow(${r.id})" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus"><i class="fas fa-trash"></i></button>
+                        </div>
+                       </td>`
+                    : '';
 
                 return `
                     <tr class="hover:bg-slate-50 transition">
@@ -190,6 +205,7 @@
                         <td class="p-4">
                             <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${r.status || 'Menunggu Persetujuan'}</span>
                         </td>
+                        ${aksiHtml}
                     </tr>
                 `;
             }).join('');
@@ -200,13 +216,30 @@
             const fd = new FormData(e.target);
             const payload = Object.fromEntries(fd.entries());
             if (!payload.tgl_selesai) delete payload.tgl_selesai;
-            payload.status = 'Menunggu Persetujuan';
+            payload.status = window.isAdminUser ? 'Disetujui' : 'Menunggu Persetujuan';
 
             const { error } = await sb.from('peminjaman_ruangan').insert([payload]);
             if (error) return showToast('Gagal mengajukan: ' + error.message, true);
 
             e.target.reset();
             showToast('Pengajuan peminjaman ruangan berhasil dikirim!');
+            loadData();
+        }
+
+        async function setStatus(id, status) {
+            if (!window.isAdminUser) return;
+            const { error } = await sb.from('peminjaman_ruangan').update({ status }).eq('id', id);
+            if (error) return showToast(error.message, true);
+            showToast(`Status diubah menjadi ${status}`);
+            loadData();
+        }
+
+        async function deleteRow(id) {
+            if (!window.isAdminUser) return;
+            if (!confirm('Hapus jadwal peminjaman ruangan ini?')) return;
+            const { error } = await sb.from('peminjaman_ruangan').delete().eq('id', id);
+            if (error) return showToast(error.message, true);
+            showToast('Jadwal berhasil dihapus!');
             loadData();
         }
 

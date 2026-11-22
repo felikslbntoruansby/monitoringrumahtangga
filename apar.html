@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" style="visibility:hidden;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -28,12 +29,16 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <div id="userBadge"></div>
                 <a href="index.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
                     <i class="fas fa-home mr-1"></i> Dashboard
                 </a>
                 <a href="ac.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
                     <i class="fas fa-snowflake mr-1"></i> Unit AC
                 </a>
+                <button onclick="logoutApp()" class="px-3 py-1.5 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white transition cursor-pointer">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -130,7 +135,6 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
-        const sb = window.supabase.createClient('https://bxthbzzslipaoztvqupw.supabase.co', 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0');
         let allAparRows = [];
         let currentTab = 'G. UMUM';
 
