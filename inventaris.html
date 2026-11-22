@@ -345,7 +345,7 @@
     function populateDropdowns() {
       const optionsHtml = items.map(r => {
         const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
-        return `<option value="${r.id}">${r.code || ''} - ${r.name} (Sisa Stok: ${stok} ${r.unit || 'Unit'})</option>`;
+        return `<option value="${Number(r.id)}">${escapeHtml(r.code || '')} - ${escapeHtml(r.name)} (Sisa Stok: ${stok} ${escapeHtml(r.unit || 'Unit')})</option>`;
       }).join('');
 
       const ambilSel = document.getElementById('ambilItemId');
@@ -356,35 +356,25 @@
 
     async function submitAmbilBarang(e) {
       e.preventDefault();
-      const id = document.getElementById('ambilItemId').value;
+      const id = parseInt(document.getElementById('ambilItemId').value, 10);
       const qty = parseInt(document.getElementById('ambilQty').value, 10);
-      const pic = document.getElementById('ambilPic').value;
-      const notes = document.getElementById('ambilNotes').value;
+      const pic = document.getElementById('ambilPic').value.trim();
+      const notes = document.getElementById('ambilNotes').value.trim();
 
-      const item = items.find(x => String(x.id) === String(id));
-      if (!item) return showToast('Pilih barang terlebih dahulu!', true);
+      if (!id) return showToast('Pilih barang terlebih dahulu!', true);
 
-      const stokSaatIni = Number(item.initial || 0) + Number(item.inQty || 0) - Number(item.outQty || 0);
-      if (qty > stokSaatIni) {
-        return showToast(`Stok tidak mencukupi! Sisa stok ${item.name} hanya ${stokSaatIni}.`, true);
-      }
+      const { error } = await sb.rpc('ambil_barang_aman', {
+        p_item_id: id,
+        p_qty: qty,
+        p_pic: pic,
+        p_notes: notes
+      });
 
-      const newOut = Number(item.outQty || 0) + qty;
-      const { error: updErr } = await sb.from('inventory').update({ outQty: newOut }).eq('id', id);
-      if (updErr) return showToast('Gagal mengurangi stok: ' + updErr.message, true);
-
-      const { error: logErr } = await sb.from('logs').insert([{
-        inventory_id: id,
-        type: 'OUT',
-        quantity: qty,
-        pic_name: pic,
-        notes: notes
-      }]);
-      if (logErr) return showToast('Stok berkurang, tetapi gagal catat log: ' + logErr.message, true);
+      if (error) return showToast(error.message, true);
 
       document.getElementById('ambilQty').value = 1;
       document.getElementById('ambilNotes').value = '';
-      showToast(`Pengambilan ${qty} ${item.unit || 'Unit'} ${item.name} berhasil dicatat!`);
+      showToast('Pengambilan barang berhasil dicatat secara aman!');
       loadData(false);
     }
 
@@ -505,25 +495,26 @@
 
       document.getElementById('tbody').innerHTML = filtered.length ? filtered.map(r => {
         const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
+        const safeNameAttr = escapeHtml((r.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
         const adminBtns = window.isAdminUser ? `
           <td class="p-3.5 text-center space-x-1">
-            <button onclick="openEditModal(${r.id})" class="px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-lg font-bold cursor-pointer" title="Edit">
+            <button onclick="openEditModal(${Number(r.id)})" class="px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-lg font-bold cursor-pointer" title="Edit">
               <i class="fa-solid fa-pen"></i>
             </button>
-            <button onclick="deleteItem(${r.id}, '${(r.name || '').replace(/'/g, "\\'")}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus">
+            <button onclick="deleteItem(${Number(r.id)}, '${safeNameAttr}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus">
               <i class="fa-solid fa-trash"></i>
             </button>
           </td>` : '';
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-3.5 font-mono text-slate-500">${r.code || '-'}</td>
-            <td class="p-3.5 font-bold text-slate-900">${r.name || '-'}</td>
-            <td class="p-3.5">${r.location || '-'}</td>
-            <td class="p-3.5 text-center">${r.initial || 0}</td>
-            <td class="p-3.5 text-center font-bold text-emerald-600">+${r.inQty || 0}</td>
-            <td class="p-3.5 text-center font-bold text-rose-600">-${r.outQty || 0}</td>
-            <td class="p-3.5 text-center font-extrabold text-slate-900">${stok} ${r.unit || 'Unit'}</td>
+            <td class="p-3.5 font-mono text-slate-500">${escapeHtml(r.code || '-')}</td>
+            <td class="p-3.5 font-bold text-slate-900">${escapeHtml(r.name || '-')}</td>
+            <td class="p-3.5">${escapeHtml(r.location || '-')}</td>
+            <td class="p-3.5 text-center">${Number(r.initial || 0)}</td>
+            <td class="p-3.5 text-center font-bold text-emerald-600">+${Number(r.inQty || 0)}</td>
+            <td class="p-3.5 text-center font-bold text-rose-600">-${Number(r.outQty || 0)}</td>
+            <td class="p-3.5 text-center font-extrabold text-slate-900">${stok} ${escapeHtml(r.unit || 'Unit')}</td>
             <td class="p-3.5">
               <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${stok > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
                 ${stok > 0 ? 'Tersedia' : 'Habis'}
@@ -539,26 +530,26 @@
       document.getElementById('logBody').innerHTML = logs.length ? logs.map(l => {
         const waktu = l.created_at ? new Date(l.created_at).toLocaleString('id-ID') : '-';
         const isOut = l.type === 'OUT';
-        const namaBarang = l.inventory ? `${l.inventory.code || ''} - ${l.inventory.name || ''}` : `ID #${l.inventory_id}`;
+        const namaBarang = l.inventory ? `${escapeHtml(l.inventory.code || '')} - ${escapeHtml(l.inventory.name || '')}` : `ID #${Number(l.inventory_id)}`;
         const delBtn = window.isAdminUser ? `
           <td class="p-3.5 text-center">
-            <button onclick="deleteLog(${l.id})" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer">
+            <button onclick="deleteLog(${Number(l.id)})" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer">
               <i class="fa-solid fa-trash"></i>
             </button>
           </td>` : '';
 
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-3.5 text-slate-500">${waktu}</td>
+            <td class="p-3.5 text-slate-500">${escapeHtml(waktu)}</td>
             <td class="p-3.5">
               <span class="px-2 py-0.5 rounded-md font-bold text-[10px] ${isOut ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
                 ${isOut ? 'PENGAMBILAN' : 'STOK MASUK'}
               </span>
             </td>
             <td class="p-3.5 font-bold text-slate-800">${namaBarang}</td>
-            <td class="p-3.5 text-center font-extrabold ${isOut ? 'text-rose-600' : 'text-emerald-600'}">${isOut ? '-' : '+'}${l.quantity}</td>
-            <td class="p-3.5 font-semibold">${l.pic_name || '-'}</td>
-            <td class="p-3.5 text-slate-600">${l.notes || '-'}</td>
+            <td class="p-3.5 text-center font-extrabold ${isOut ? 'text-rose-600' : 'text-emerald-600'}">${isOut ? '-' : '+'}${Number(l.quantity)}</td>
+            <td class="p-3.5 font-semibold">${escapeHtml(l.pic_name || '-')}</td>
+            <td class="p-3.5 text-slate-600">${escapeHtml(l.notes || '-')}</td>
             ${delBtn}
           </tr>`;
       }).join('') : `<tr><td colspan="${colSpan}" class="p-6 text-center text-slate-400">Belum ada riwayat pengambilan atau mutasi barang.</td></tr>`;

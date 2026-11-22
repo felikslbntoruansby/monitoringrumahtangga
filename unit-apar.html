@@ -229,7 +229,7 @@
 
             const { data, error } = await sb.from('apar').select('*').eq('kode_apar', kodeApar);
             if (error || !data || data.length === 0) {
-                statusBox.innerHTML = `<p class="text-red-600 font-bold">Data unit APAR "${kodeApar}" tidak terdaftar di sistem.</p>`;
+                statusBox.innerHTML = `<p class="text-red-600 font-bold">Data unit APAR "${escapeHtml(kodeApar)}" tidak terdaftar di sistem.</p>`;
                 return;
             }
 
@@ -281,11 +281,11 @@
                 return `
                     <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
                         <div>
-                            <div class="font-bold text-slate-800">Cek ke-${idx + 1} • ${s.tgl_inspeksi}</div>
-                            <div class="text-slate-500 mt-0.5">Tekanan: ${s.tekanan_bar || 'Normal'} ${s.petugas ? `• Oleh: <b>${s.petugas}</b>` : ''}</div>
-                            ${s.catatan ? `<div class="text-slate-400 italic mt-0.5">"${s.catatan}"</div>` : ''}
+                            <div class="font-bold text-slate-800">Cek ke-${idx + 1} • ${escapeHtml(s.tgl_inspeksi)}</div>
+                            <div class="text-slate-500 mt-0.5">Tekanan: ${escapeHtml(s.tekanan_bar || 'Normal')} ${s.petugas ? `• Oleh: <b>${escapeHtml(s.petugas)}</b>` : ''}</div>
+                            ${s.catatan ? `<div class="text-slate-400 italic mt-0.5">"${escapeHtml(s.catatan)}"</div>` : ''}
                         </div>
-                        <span class="px-2.5 py-1 rounded-lg font-bold ${badge}">${s.status}</span>
+                        <span class="px-2.5 py-1 rounded-lg font-bold ${badge}">${escapeHtml(s.status)}</span>
                     </div>
                 `;
             }).join('');
@@ -341,7 +341,7 @@
             if (!window.isTeknisiUser) return;
             const select = document.getElementById('selectScheduleId');
             select.innerHTML = unitSchedules.map((s, idx) =>
-                `<option value="${s.id}">Cek ke-${idx + 1} (${s.tgl_inspeksi}) - [${s.status}]</option>`
+                `<option value="${Number(s.id)}">Cek ke-${idx + 1} (${escapeHtml(s.tgl_inspeksi)}) - [${escapeHtml(s.status)}]</option>`
             ).join('');
 
             const nextPending = unitSchedules.find(s => s.status === 'Terjadwal');

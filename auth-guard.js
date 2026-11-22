@@ -1,13 +1,8 @@
 const SUPABASE_URL = 'https://bxthbzzslipaoztvqupw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_y44KWW3Si2wjLlBtXaDP7Q_rnkWZIn0';
-
-const ADMIN_EMAIL = 'admin@rumahtangga.ac.id';
-const TEKNISI_EMAIL = 'teknisirt@rumahtangga.ac.id';
 const ROLE_CACHE_KEY = 'rt_poltekbang_role_cache';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// Halaman yang diblokir dari Viewer (hanya terbuka untuk Admin & Teknisi)
 const VIEWER_BLOCKED_PAGES = ['inventaris.html'];
 
 let currentUser = null;
@@ -15,10 +10,19 @@ let userRole = 'VIEWER';
 window.isAdminUser = false;
 window.isTeknisiUser = false;
 
-function resolveRoleByEmail(email) {
-  const cleanEmail = (email || '').toLowerCase();
-  if (cleanEmail === ADMIN_EMAIL.toLowerCase()) return 'ADMIN';
-  if (cleanEmail === TEKNISI_EMAIL.toLowerCase()) return 'TEKNISI';
+window.escapeHtml = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+function resolveRoleFromUser(user) {
+  const role = (user?.app_metadata?.role || 'VIEWER').toUpperCase();
+  if (role === 'ADMIN' || role === 'TEKNISI') return role;
   return 'VIEWER';
 }
 
@@ -50,7 +54,7 @@ function applyRoleUI(role) {
 
     userBadge.innerHTML = `
       <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${badgeStyle}">
-        <i class="fa-solid ${icon} mr-1"></i> ${role}
+        <i class="fa-solid ${icon} mr-1"></i> ${escapeHtml(role)}
       </span>
     `;
   }
@@ -61,11 +65,9 @@ function isPageBlockedForRole(role) {
   return role === 'VIEWER' && VIEWER_BLOCKED_PAGES.some(p => currentPage === p || currentPage === p.replace('.html', ''));
 }
 
-// 1. INSTANT RENDER DARI SESSIONSTORAGE (Meningkatkan FCP/LCP Lighthouse & Navigasi Instan)
 const cachedRole = sessionStorage.getItem(ROLE_CACHE_KEY);
 if (cachedRole) {
   setRoleFlags(cachedRole);
-
   if (isPageBlockedForRole(cachedRole)) {
     window.location.replace('index.html');
   } else {
@@ -78,7 +80,6 @@ if (cachedRole) {
   }
 }
 
-// 2. VALIDASI SESI ASLI DI LATAR BELAKANG (Keamanan tetap terjaga)
 (async function verifySession() {
   const { data: { session } } = await sb.auth.getSession();
 
@@ -89,7 +90,7 @@ if (cachedRole) {
   }
 
   currentUser = session.user;
-  const verifiedRole = resolveRoleByEmail(currentUser.email);
+  const verifiedRole = resolveRoleFromUser(currentUser);
   setRoleFlags(verifiedRole);
   sessionStorage.setItem(ROLE_CACHE_KEY, verifiedRole);
 
@@ -99,7 +100,6 @@ if (cachedRole) {
     return;
   }
 
-  // Jika belum ditampilkan lewat cache (kunjungan pertama setelah login), tampilkan sekarang
   if (!cachedRole) {
     document.documentElement.style.visibility = 'visible';
     if (document.readyState === 'loading') {
