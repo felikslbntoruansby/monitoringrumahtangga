@@ -5,73 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen & Maintenance AC - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth-guard.js"></script>
+    <script src="navbar.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: 700; }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="bg-[#F4F6F9] text-slate-800 min-h-screen antialiased">
 
-    <!-- NAVBAR TERPADU -->
-    <nav class="bg-sky-800 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center gap-3">
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fas fa-snowflake text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">Monitoring & Maintenance AC</h1>
-                    <p class="text-xs text-sky-100">Sistem Jadwal Cuci Rutin & Kartu Kendali Unit AC</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                <div id="userBadge"></div>
-                <a href="index.html" class="px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-900 transition">
-                    <i class="fas fa-home mr-1"></i> Dashboard
-                </a>
-                <a href="apar.html" class="px-3 py-1.5 rounded-lg bg-sky-900/70 hover:bg-sky-900 transition">
-                    <i class="fas fa-fire-extinguisher mr-1"></i> APAR
-                </a>
-                <button onclick="logoutApp()" class="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition cursor-pointer">
-                    <i class="fas fa-right-from-bracket"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+    <div id="appShell" data-page="ac.html"></div>
 
     <!-- KONTEN UTAMA -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+
+        <div id="pageHeader"></div>
 
         <!-- STATISTIK RINGKAS -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-[#0B2545]">
                 <p class="text-xs text-slate-500 font-semibold uppercase">Total Unit AC</p>
-                <p id="statTotalUnit" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
+                <p id="statTotalUnit" class="text-2xl font-extrabold text-[#0B2545] mt-1">0</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
+            <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-[#14532D]">
                 <p class="text-xs text-emerald-600 font-semibold uppercase">Kondisi Baik / Dingin</p>
                 <p id="statBaik" class="text-2xl font-extrabold text-emerald-600 mt-1">0</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200">
+            <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-amber-500">
                 <p class="text-xs text-amber-600 font-semibold uppercase">Proses Servis</p>
                 <p id="statProses" class="text-2xl font-extrabold text-amber-600 mt-1">0</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-red-200">
+            <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-rose-600">
                 <p class="text-xs text-red-600 font-semibold uppercase">Unit Rusak / Trouble</p>
                 <p id="statRusak" class="text-2xl font-extrabold text-red-600 mt-1">0</p>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-sky-200 col-span-2 md:col-span-1">
+            <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-cyan-600 col-span-2 md:col-span-1">
                 <p class="text-xs text-sky-600 font-semibold uppercase">Jadwal Bulan Ini</p>
                 <p id="statBulanIni" class="text-2xl font-extrabold text-sky-600 mt-1">0</p>
             </div>
         </div>
 
         <!-- TOOLBAR PENCARIAN -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex justify-end items-center">
+        <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 flex justify-end items-center">
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
                 <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode AC, gedung, ruang, merk..."
@@ -80,7 +58,7 @@
         </div>
 
         <!-- TAB KATEGORI GEDUNG -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
             <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2">
                 <button onclick="switchTab('G. UMUM')" id="tab-G. UMUM" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap tab-active">G. UMUM</button>
                 <button onclick="switchTab('G. LAB')" id="tab-G. LAB" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. LAB</button>
@@ -140,7 +118,7 @@
 
         function showToast(msg, isErr = false) {
             const el = document.createElement('div');
-            el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+            el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
             setTimeout(() => el.remove(), 4000);
@@ -222,13 +200,13 @@
                 return `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-3 sticky left-0 bg-white">
-                            <div class="font-bold text-sky-700">${u.kode_unit}</div>
-                            <div class="text-xs font-semibold text-slate-800">${u.gedung || ''} ${u.lantai ? `(${u.lantai})` : ''}</div>
-                            <div class="text-xs text-slate-500">${u.ruang || u.lokasi || ''}</div>
+                            <div class="font-bold text-sky-700">${escapeHtml(u.kode_unit)}</div>
+                            <div class="text-xs font-semibold text-slate-800">${escapeHtml(u.gedung || '')} ${u.lantai ? `(${escapeHtml(u.lantai)})` : ''}</div>
+                            <div class="text-xs text-slate-500">${escapeHtml(u.ruang || u.lokasi || '')}</div>
                         </td>
                         <td class="p-3">
-                            <div class="font-semibold text-slate-800">${u.merk_ac || '-'} • ${u.type_ac || 'Split'}</div>
-                            <div class="text-xs text-slate-500">Kapasitas: <b>${u.kapasitas || '-'}</b> | Freon: <b>${u.freon || '-'}</b></div>
+                            <div class="font-semibold text-slate-800">${escapeHtml(u.merk_ac || '-')} • ${escapeHtml(u.type_ac || 'Split')}</div>
+                            <div class="text-xs text-slate-500">Kapasitas: <b>${escapeHtml(u.kapasitas || '-')}</b> | Freon: <b>${escapeHtml(u.freon || '-')}</b></div>
                         </td>
                         <td class="p-3">
                             <div class="flex flex-wrap gap-1.5 justify-center">${boxes}</div>
@@ -277,13 +255,13 @@
 
             tbody.innerHTML = list.map(r => `
                 <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-semibold">${r.tgl_servis}</td>
-                    <td class="p-3 font-bold text-sky-700">${r.kode_unit}</td>
-                    <td class="p-3">${r.gedung} - ${r.ruang || r.lokasi || ''}</td>
-                    <td class="p-3">${r.merk_ac} (${r.kapasitas})</td>
+                    <td class="p-3 font-semibold">${escapeHtml(r.tgl_servis)}</td>
+                    <td class="p-3 font-bold text-sky-700">${escapeHtml(r.kode_unit)}</td>
+                    <td class="p-3">${escapeHtml(r.gedung)} - ${escapeHtml(r.ruang || r.lokasi || '')}</td>
+                    <td class="p-3">${escapeHtml(r.merk_ac)} (${escapeHtml(r.kapasitas)})</td>
                     <td class="p-3">
                         <span class="px-2 py-1 rounded-full text-xs font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                            ${r.status} • ${r.jenis_pekerjaan || 'Cuci AC'}
+                            ${escapeHtml(r.status)} • ${escapeHtml(r.jenis_pekerjaan || 'Cuci AC')}
                         </span>
                     </td>
                 </tr>

@@ -5,56 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peminjaman Kendaraan - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth-guard.js"></script>
+    <script src="navbar.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen">
+<body class="bg-[#F4F6F9] text-slate-800 min-h-screen antialiased">
 
-    <!-- NAVBAR -->
-    <nav class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center gap-3">
-                <div class="bg-emerald-600 p-2.5 rounded-xl">
-                    <i class="fas fa-car text-lg"></i>
-                </div>
-                <div>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-300">BIDANG UMUM • POLTEKBANG SBY</p>
-                    <h1 class="font-extrabold text-lg leading-tight">Peminjaman Kendaraan</h1>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                <div id="userBadge"></div>
-                <a href="index.html" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                    <i class="fas fa-home mr-1"></i> Dashboard
-                </a>
-                <button onclick="logoutApp()" class="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white transition cursor-pointer">
-                    <i class="fas fa-right-from-bracket"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+    <div id="appShell" data-page="kendaraan.html"></div>
 
     <!-- KONTEN UTAMA -->
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+
+        <div id="pageHeader"></div>
 
         <!-- KPI RINGKAS KENDARAAN -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+            <div class="bg-white p-5 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-[#14532D]">
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Booking Kendaraan</p>
-                <p id="statTotal" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p>
+                <p id="statTotal" class="text-3xl font-extrabold text-[#0B2545] mt-1">0</p>
                 <p class="text-[11px] text-slate-400 mt-1">Total Perjalanan</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+            <div class="bg-white p-5 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-amber-600">
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Kendaraan Berangkat Hari Ini</p>
                 <p id="statHariIni" class="text-3xl font-extrabold text-amber-600 mt-1">0</p>
                 <p class="text-[11px] text-amber-600 mt-1">Unit Sedang Bertugas</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+            <div class="bg-white p-5 rounded-xl shadow-2xs border border-slate-200 border-t-4 border-t-sky-600">
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Selesai Kembali</p>
                 <p id="statSelesai" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
                 <p class="text-[11px] text-slate-400 mt-1">Riwayat Perjalanan</p>
@@ -64,10 +45,10 @@
         <!-- GRID FORM & TABEL KENDARAAN -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- FORM BOOKING KENDARAAN (ADMIN & VIEWER BISA ISI) -->
-            <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-                <h2 class="font-extrabold text-base text-slate-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-car-side text-emerald-600"></i> Form Booking Kendaraan
+            <!-- FORM BOOKING KENDARAAN -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-xl shadow-2xs border border-slate-200">
+                <h2 class="font-extrabold text-base text-[#0B2545] mb-4 flex items-center gap-2">
+                    <i class="fas fa-car-side text-[#14532D]"></i> Form Booking Kendaraan
                 </h2>
                 <form id="bookingForm" onsubmit="submitBooking(event)" class="space-y-3.5 text-xs">
                     <div>
@@ -114,16 +95,16 @@
                         <textarea name="tujuan" rows="2" required placeholder="Contoh: Bandara Juanda T1 - Penjemputan Tamu"
                             class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5"></textarea>
                     </div>
-                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
+                    <button type="submit" class="w-full py-3 bg-[#14532D] hover:bg-emerald-800 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
                         <i class="fas fa-paper-plane mr-1"></i> Ajukan Peminjaman Kendaraan
                     </button>
                 </form>
             </div>
 
             <!-- DAFTAR JADWAL PEMINJAMAN KENDARAAN -->
-            <div class="lg:col-span-8 bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+            <div class="lg:col-span-8 bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <h2 class="font-extrabold text-base text-slate-900">Daftar Jadwal Peminjaman Kendaraan</h2>
+                    <h2 class="font-extrabold text-base text-[#0B2545]">Daftar Jadwal Peminjaman Kendaraan</h2>
                     <input type="search" id="searchInput" oninput="renderTable()" placeholder="Cari kendaraan, nopol, driver, tujuan..."
                         class="w-full sm:w-64 border border-slate-300 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
@@ -156,7 +137,7 @@
 
         function showToast(msg, isErr = false) {
             const el = document.createElement('div');
-            el.className = `${isErr ? 'bg-rose-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+            el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
             setTimeout(() => el.remove(), 4000);
@@ -203,19 +184,19 @@
                 return `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 whitespace-nowrap">
-                            <div class="font-bold text-slate-900">${r.tgl_berangkat}${r.tgl_kembali && r.tgl_kembali !== r.tgl_berangkat ? ` s/d ${r.tgl_kembali}` : ''}</div>
-                            <div class="text-[11px] font-semibold text-emerald-600 mt-0.5">${r.jam_berangkat || '-'}</div>
+                            <div class="font-bold text-slate-900">${escapeHtml(r.tgl_berangkat)}${r.tgl_kembali && r.tgl_kembali !== r.tgl_berangkat ? ` s/d ${escapeHtml(r.tgl_kembali)}` : ''}</div>
+                            <div class="text-[11px] font-semibold text-emerald-600 mt-0.5">${escapeHtml(r.jam_berangkat || '-')}</div>
                         </td>
                         <td class="p-4">
-                            <div class="font-bold text-slate-900">${r.kendaraan}</div>
-                            <div class="text-[11px] text-slate-500 mt-0.5">Driver: <b>${r.driver || '-'}</b></div>
+                            <div class="font-bold text-slate-900">${escapeHtml(r.kendaraan)}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">Driver: <b>${escapeHtml(r.driver || '-')}</b></div>
                         </td>
                         <td class="p-4">
-                            <div class="font-bold text-slate-800">${r.nama_peminjam}</div>
-                            <div class="text-[11px] text-slate-500 mt-0.5">${r.tujuan || '-'}</div>
+                            <div class="font-bold text-slate-800">${escapeHtml(r.nama_peminjam)}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(r.tujuan || '-')}</div>
                         </td>
                         <td class="p-4">
-                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${r.status || 'Menunggu Persetujuan'}</span>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badge}">${escapeHtml(r.status || 'Menunggu Persetujuan')}</span>
                         </td>
                         ${aksiHtml}
                     </tr>
