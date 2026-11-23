@@ -386,11 +386,15 @@
             const item = allAparRows.find(r => r.no_urut === noUrut);
             if (!item) return;
 
+            localStorage.setItem('selected_apar_no', String(item.no_urut));
+
             document.getElementById('qrTitle').textContent = `APAR No. ${item.no_urut} (${item.kode_ruangan || '-'})`;
             document.getElementById('qrSubtitle').textContent = `${item.nama_lokasi || '-'} • ${item.jenis_apar || '-'} ${item.isi_tabung || ''}`;
 
-            const detailUrl = `${window.location.origin}/unit-apar?no=${item.no_urut}`;
-            document.getElementById('qrOpenLink').href = detailUrl;
+            const detailUrl = `${window.location.origin}/unit-apar.html?no=${item.no_urut}#no=${item.no_urut}`;
+            const linkEl = document.getElementById('qrOpenLink');
+            linkEl.href = detailUrl;
+            linkEl.onclick = () => localStorage.setItem('selected_apar_no', String(item.no_urut));
 
             const box = document.getElementById('qrBox');
             box.innerHTML = '';
@@ -453,7 +457,7 @@
             `).join('');
 
             activeUnits.forEach(item => {
-                const url = `${window.location.origin}/unit-apar?no=${item.no_urut}`;
+                const url = `${window.location.origin}/unit-apar.html?no=${item.no_urut}#no=${item.no_urut}`;
                 new QRCode(document.getElementById(`batch-qr-${item.no_urut}`), {
                     text: url,
                     width: 110,

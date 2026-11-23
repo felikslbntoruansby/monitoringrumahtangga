@@ -174,7 +174,15 @@
         const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwv3-0KKLRPErGISI7fafm1UwCV7bR5pieAl7B0E_OL2KJofbTNNiFMI_PYEYtOIKm0jA/exec';
 
         const params = new URLSearchParams(window.location.search);
-        const noUrut = params.get('no') || params.get('no_urut') || window.location.pathname.split('/').pop().replace(/\D/g, '');
+        const hashMatch = window.location.hash.match(/no=(\d+)/);
+        const noUrut = params.get('no')
+            || (hashMatch ? hashMatch[1] : null)
+            || localStorage.getItem('selected_apar_no');
+
+        if (noUrut) {
+            localStorage.setItem('selected_apar_no', String(noUrut));
+        }
+
         let currentUnit = null;
 
         function showToast(msg, isErr = false) {

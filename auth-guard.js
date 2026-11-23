@@ -16,9 +16,9 @@ const _isBlockedPageForViewer = VIEWER_BLOCKED_PAGES.some(
   p => _rawPath === p || _rawPath === p.replace('.html', '')
 );
 
-// Sembunyikan nama file (.html / path menu) agar URL selalu monitoringrumahtangga.vercel.app
-if (window.location.pathname !== '/' && !window.location.search.includes('kode=')) {
-  window.history.replaceState(null, '', '/');
+// Sembunyikan nama file (.html / path menu) sambil tetap mempertahankan parameter (?no= / ?kode=) & #hash
+if (window.location.pathname !== '/' && !window.location.search.includes('kode=') && !window.location.search.includes('no=')) {
+  window.history.replaceState(null, '', '/' + window.location.search + window.location.hash);
 }
 
 window.escapeHtml = function(str) {
