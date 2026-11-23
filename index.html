@@ -124,7 +124,7 @@
               Ringkasan Layanan Rumah Tangga
             </h2>
             <p class="text-xs text-slate-500 mt-1">
-              Monitoring peminjaman ruangan, kendaraan dinas, inventaris gudang, pemeliharaan AC, serta kesiapan APAR & Hydrant.
+              Monitoring peminjaman ruangan, kendaraan dinas, inventaris gudang, pemeliharaan AC, serta kesiapan unit APAR.
             </p>
           </div>
         </div>
@@ -174,11 +174,11 @@
 
       <a href="apar.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-rose-600 shadow-2xs hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase text-slate-500">APAR & Hydrant</span>
+          <span class="text-[11px] font-bold uppercase text-slate-500">Unit APAR</span>
           <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center"><i class="fa-solid fa-fire-extinguisher"></i></span>
         </div>
         <div id="kpi-apar" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
-        <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 unit siap pakai</div>
+        <div id="kpi-apar-sub" class="text-[11px] text-slate-500 mt-1">0 titik terisi dari 0 lokasi</div>
       </a>
     </div>
 
@@ -224,8 +224,8 @@
         <a href="apar.html" class="bg-white p-5 rounded-xl border border-slate-200 hover:border-[#0B2545] hover:shadow-md transition flex items-start gap-4">
           <div class="w-11 h-11 rounded-lg bg-rose-50 border border-rose-100 text-rose-700 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-fire-extinguisher"></i></div>
           <div>
-            <h3 class="font-bold text-[#0B2545] text-sm">5. Matriks & QR APAR</h3>
-            <p class="text-xs text-slate-500 mt-1">Lihat kartu kendali inspeksi APAR bulanan, masa berlaku tabung, dan kode QR.</p>
+            <h3 class="font-bold text-[#0B2545] text-sm">5. Data & QR APAR</h3>
+            <p class="text-xs text-slate-500 mt-1">Lihat data titik lokasi APAR, masa berlaku tabung, dan cetak kode QR.</p>
           </div>
         </a>
       </div>
@@ -285,10 +285,10 @@
         const acServis = ac.filter(x => x.status === 'Proses' || x.status === 'RUSAK').length;
         document.getElementById('kpi-ac-sub').innerText = `${acServis} jadwal perlu perhatian`;
 
-        const uniqueApar = new Set(apar.map(x => x.kode_apar)).size;
-        document.getElementById('kpi-apar').innerText = uniqueApar;
-        const aparSiap = apar.filter(x => x.status === 'BAIK').length;
-        document.getElementById('kpi-apar-sub').innerText = `${aparSiap} cek berstatus BAIK`;
+        const totalTabungApar = apar.reduce((sum, x) => sum + (Number(x.qty) || 0), 0);
+        const titikTerisiApar = apar.filter(x => (Number(x.qty) || 0) > 0).length;
+        document.getElementById('kpi-apar').innerText = totalTabungApar;
+        document.getElementById('kpi-apar-sub').innerText = `${titikTerisiApar} titik terisi dari ${apar.length} lokasi`;
 
         if (notify) showToast('Semua data berhasil diperbarui!');
       } catch (e) {
