@@ -24,7 +24,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-base leading-tight">Kartu Kendali Digital APAR</h1>
-                    <p class="text-[11px] text-red-100">Inspeksi & Lapor Kondisi Lapangan</p>
+                    <p class="text-[11px] text-red-100">Sinkron Dua Arah ke Database & Spreadsheet</p>
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
@@ -71,8 +71,8 @@
                         <span class="text-slate-400 block">Masa Berlaku</span>
                         <strong id="txtMasaBerlaku" class="text-slate-800 text-sm">-</strong>
                     </div>
-                    <span id="expiredWarning" class="hidden bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-lg text-[11px]">
-                        <i class="fas fa-exclamation-triangle mr-1"></i> PERLU CEK
+                    <span id="expiredWarning" class="hidden bg-rose-100 text-rose-700 font-bold px-2.5 py-1 rounded-lg text-[11px]">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> EXPIRED / PERLU CEK
                     </span>
                 </div>
                 <div class="bg-slate-50 p-2.5 rounded-xl col-span-2">
@@ -123,7 +123,7 @@
                     <input type="text" id="repCatatan" placeholder="Keterangan singkat..." class="w-full border border-slate-300 rounded-xl px-3 py-2">
                 </div>
                 <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
-                    Kirim Laporan
+                    Kirim Laporan (Otomatis Update Spreadsheet)
                 </button>
             </form>
         </div>
@@ -171,6 +171,8 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
+        const APPS_SCRIPT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwv3-0KKLRPErGISI7fafm1UwCV7bR5pieAl7B0E_OL2KJofbTNNiFMI_PYEYtOIKm0jA/exec';
+
         const params = new URLSearchParams(window.location.search);
         const noUrut = params.get('no');
         let currentUnit = null;
@@ -181,6 +183,20 @@
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
             setTimeout(() => el.remove(), 4000);
+        }
+
+        async function pushBackToSpreadsheet(updatedFields) {
+            if (!APPS_SCRIPT_WEBHOOK_URL) return;
+            try {
+                await fetch(APPS_SCRIPT_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ no_urut: currentUnit.no_urut, ...updatedFields })
+                });
+            } catch (e) {
+                console.warn('Webhook Spreadsheet:', e);
+            }
         }
 
         async function loadUnit() {
@@ -209,10 +225,17 @@
             document.getElementById('txtKeterangan').textContent = data.keterangan || '-';
 
             const qtyNum = Number(data.qty) || 0;
+            const parsedDate = data.masa_berlaku ? new Date(data.masa_berlaku) : null;
+            const isExpired = parsedDate && !isNaN(parsedDate) && parsedDate < new Date();
+            if (isExpired && qtyNum > 0) document.getElementById('expiredWarning').classList.remove('hidden');
+
             const pill = document.getElementById('statusPill');
             if (qtyNum === 0) {
                 pill.textContent = 'TIDAK ADA';
                 pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-slate-600 text-white';
+            } else if (isExpired) {
+                pill.textContent = 'EXPIRED';
+                pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-rose-600 text-white';
             } else {
                 pill.textContent = (data.keterangan || 'TERSEDIA').toUpperCase();
                 pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500 text-white';
@@ -241,8 +264,10 @@
             }).eq('no_urut', currentUnit.no_urut);
 
             if (error) return showToast('Gagal mengirim laporan: ' + error.message, true);
+            await pushBackToSpreadsheet({ keterangan: ketBaru });
+
             closeReportModal();
-            showToast('Laporan kendala APAR berhasil diperbarui!');
+            showToast('Laporan terkirim ke Database & Google Spreadsheet!');
             loadUnit();
         }
 
@@ -262,18 +287,24 @@
 
         async function saveInspection(e) {
             e.preventDefault();
-            const { error } = await sb.from('apar').update({
+            const updatedFields = {
                 jenis_apar: document.getElementById('inpJenis').value.trim() || '-',
                 isi_tabung: document.getElementById('inpIsi').value.trim() || '-',
                 masa_berlaku: document.getElementById('inpMasa').value.trim() || '-',
                 qty: parseInt(document.getElementById('inpQty').value, 10) || 0,
-                keterangan: document.getElementById('inpKet').value.trim() || '-',
+                keterangan: document.getElementById('inpKet').value.trim() || '-'
+            };
+
+            const { error } = await sb.from('apar').update({
+                ...updatedFields,
                 updated_at: new Date().toISOString()
             }).eq('no_urut', currentUnit.no_urut);
 
             if (error) return showToast('Gagal menyimpan: ' + error.message, true);
+            await pushBackToSpreadsheet(updatedFields);
+
             closeCheckModal();
-            showToast('Data APAR berhasil diperbarui!');
+            showToast('Data APAR tersimpan & tersinkron ke Spreadsheet!');
             loadUnit();
         }
 
