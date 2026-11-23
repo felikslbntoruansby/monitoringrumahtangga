@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kartu Kendali Digital APAR</title>
+    <title>Kartu Kendali Digital APAR - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -32,7 +32,7 @@
                     <i class="fas fa-home"></i>
                 </a>
                 <a href="apar.html" class="text-xs bg-red-800 hover:bg-red-900 px-2.5 py-1.5 rounded-lg font-medium">
-                    Matriks <i class="fas fa-arrow-right ml-1"></i>
+                    Daftar APAR <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
         </div>
@@ -42,164 +42,127 @@
 
         <div id="statusBox" class="bg-white p-6 rounded-2xl shadow-sm text-center text-slate-500 text-sm">
             <i class="fas fa-spinner fa-spin text-red-600 text-xl mb-2"></i>
-            <p>Memuat identitas tabung APAR...</p>
+            <p>Memuat identitas titik APAR...</p>
         </div>
 
         <div id="unitCard" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white p-4 flex justify-between items-start">
                 <div>
-                    <span id="badgeKategori" class="text-[10px] font-bold uppercase tracking-wider bg-red-600 px-2 py-0.5 rounded">G. UMUM</span>
-                    <h2 id="txtKodeApar" class="text-2xl font-extrabold tracking-tight mt-1">APAR-000</h2>
+                    <span id="badgeKode" class="text-[10px] font-bold uppercase tracking-wider bg-red-600 px-2 py-0.5 rounded">GU</span>
+                    <h2 id="txtNoUrut" class="text-2xl font-extrabold tracking-tight mt-1">APAR No. 1</h2>
                     <p id="txtLokasi" class="text-xs text-slate-300 mt-0.5">-</p>
                 </div>
                 <div id="statusPill" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500 text-white">
-                    SIAP PAKAI
+                    MASIH
                 </div>
             </div>
 
             <div class="p-4 grid grid-cols-2 gap-3 text-xs border-b border-slate-100">
                 <div class="bg-slate-50 p-2.5 rounded-xl">
-                    <span class="text-slate-400 block">Media & Kapasitas</span>
-                    <strong id="txtMedia" class="text-slate-800 text-sm">-</strong>
+                    <span class="text-slate-400 block">Jenis APAR</span>
+                    <strong id="txtJenis" class="text-slate-800 text-sm">-</strong>
                 </div>
                 <div class="bg-slate-50 p-2.5 rounded-xl">
-                    <span class="text-slate-400 block">Merk Tabung</span>
-                    <strong id="txtMerk" class="text-slate-800 text-sm">-</strong>
+                    <span class="text-slate-400 block">Isi Tabung & QTY</span>
+                    <strong id="txtIsiQty" class="text-slate-800 text-sm">-</strong>
                 </div>
                 <div class="bg-slate-50 p-2.5 rounded-xl col-span-2 flex justify-between items-center">
                     <div>
-                        <span class="text-slate-400 block">Masa Berlaku / Wajib Refill</span>
-                        <strong id="txtExpired" class="text-slate-800 text-sm">-</strong>
+                        <span class="text-slate-400 block">Masa Berlaku</span>
+                        <strong id="txtMasaBerlaku" class="text-slate-800 text-sm">-</strong>
                     </div>
-                    <span id="expiredWarning" class="hidden bg-red-100 text-red-700 font-bold px-2.5 py-1 rounded-lg text-[11px]">
-                        <i class="fas fa-exclamation-triangle mr-1"></i> EXPIRED
+                    <span id="expiredWarning" class="hidden bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-lg text-[11px]">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> PERLU CEK
                     </span>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl col-span-2">
+                    <span class="text-slate-400 block">Keterangan Terakhir</span>
+                    <strong id="txtKeterangan" class="text-slate-800 text-xs">-</strong>
                 </div>
             </div>
 
             <!-- TOMBOL LAPOR KERUSAKAN (SEMUA ROLE BISA ISI) -->
             <div class="p-4 bg-white border-b border-slate-100">
                 <button onclick="openReportModal()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
-                    <i class="fas fa-exclamation-triangle text-base"></i> Lapor APAR Rusak / Expired / Tekanan Drop
+                    <i class="fas fa-exclamation-triangle text-base"></i> Lapor APAR Rusak / Expired / Tidak Ada
                 </button>
             </div>
 
-            <!-- TOMBOL INPUT HASIL INSPEKSI (TEKNISI & ADMIN) -->
+            <!-- TOMBOL UPDATE INSPEKSI (TEKNISI & ADMIN) -->
             <div class="teknisi-only p-4 bg-slate-50">
-                <button onclick="openQuickCheck()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
-                    <i class="fas fa-clipboard-check text-base"></i> Input Hasil Cek Bulan Ini
+                <button onclick="openCheckModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-sm cursor-pointer">
+                    <i class="fas fa-clipboard-check text-base"></i> Update Status & Masa Berlaku (Petugas)
                 </button>
             </div>
-        </div>
-
-        <div id="historySection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-            <h3 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
-                <span><i class="fas fa-history text-red-600 mr-1.5"></i> Jadwal & Riwayat Inspeksi</span>
-                <span id="progressText" class="text-xs font-semibold text-emerald-600">0/12 Selesai</span>
-            </h3>
-            <div id="scheduleList" class="space-y-2.5"></div>
         </div>
     </main>
 
-    <!-- MODAL LAPOR KERUSAKAN APAR -->
+    <!-- MODAL LAPOR KENDALA -->
     <div id="reportModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
-        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <h3 class="font-bold text-base text-rose-700"><i class="fas fa-exclamation-circle mr-1.5"></i>Lapor Kendala / Kerusakan APAR</h3>
+                <h3 class="font-bold text-base text-rose-700"><i class="fas fa-exclamation-circle mr-1.5"></i>Lapor Kendala APAR</h3>
                 <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
             </div>
-
-            <form id="reportForm" onsubmit="submitPublicReport(event)" class="space-y-3.5 text-sm">
+            <form onsubmit="submitReport(event)" class="space-y-3 text-sm">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pelapor / Unit Kerja *</label>
-                    <input type="text" id="repPelapor" required placeholder="Contoh: Taruna / Staf Bagian Umum" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pelapor *</label>
+                    <input type="text" id="repPelapor" required placeholder="Nama / Unit Kerja" class="w-full border border-slate-300 rounded-xl px-3 py-2">
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Kendala / Kerusakan *</label>
-                    <select id="repKendala" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-semibold">
-                        <option value="Tekanan Drop / Jarum Merah">Jarum Tekanan Drop (Area Merah)</option>
-                        <option value="Segel / Pin Pengaman Putus">Segel / Pin Pengaman Putus / Hilang</option>
-                        <option value="Tabung Kadaluarsa / Perlu Refill">Masa Berlaku Habis / Perlu Refill</option>
-                        <option value="Selang / Nozzle / Tabung Rusak">Selang Retak / Tabung Berkarat / Rusak</option>
-                        <option value="APAR Sudah Digunakan">APAR Habis / Sudah Digunakan</option>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Kondisi Ditemukan *</label>
+                    <select id="repKondisi" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-semibold">
+                        <option value="Tekanan Drop / Merah">Jarum Tekanan Drop (Merah)</option>
+                        <option value="Kadaluarsa / Perlu Refill">Masa Berlaku Habis / Perlu Refill</option>
+                        <option value="Tabung Rusak / Segel Putus">Tabung Rusak / Segel Putus</option>
+                        <option value="Unit Tidak Ada di Lokasi">Unit Tidak Ada di Lokasi</option>
                     </select>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan Detail *</label>
-                    <textarea id="repCatatan" rows="3" required placeholder="Jelaskan kondisi tabung APAR yang ditemukan di lokasi..." class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Catatan Tambahan</label>
+                    <input type="text" id="repCatatan" placeholder="Keterangan singkat..." class="w-full border border-slate-300 rounded-xl px-3 py-2">
                 </div>
-
-                <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
-                    <i class="fas fa-paper-plane mr-1"></i> Kirim Laporan Kerusakan
+                <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl cursor-pointer">
+                    Kirim Laporan
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL INPUT INSPEKSI (TEKNISI & ADMIN) -->
+    <!-- MODAL UPDATE PETUGAS -->
     <div id="checkModal" class="fixed inset-0 bg-slate-900/70 hidden items-end sm:items-center justify-center z-50">
-        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <h3 class="font-bold text-base text-slate-800">Form Checklist Inspeksi APAR</h3>
+                <h3 class="font-bold text-base text-slate-800">Update Data APAR</h3>
                 <button onclick="closeCheckModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
             </div>
-
-            <form id="mobileInspectForm" onsubmit="saveMobileInspection(event)" class="space-y-3.5 text-sm">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Pilih Jadwal Bulan Inspeksi</label>
-                    <select id="selectScheduleId" onchange="onSelectSchedule()" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Jarum Tekanan (Pressure Gauge) *</label>
-                    <select id="inpTekanan" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-                        <option value="Normal / Hijau">🟢 Normal / Area Hijau</option>
-                        <option value="Kurang / Merah">🔴 Kurang / Area Merah (Drop)</option>
-                        <option value="Overcharge">🟡 Overcharge (Berlebih)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Checklist Kondisi Fisik</label>
-                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Pin & Segel Utuh" checked>
-                            <span>Pin pengaman & segel plastik masih utuh</span>
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Selang & Nozzle Baik" checked>
-                            <span>Selang (hose) & corong tidak retak / tersumbat</span>
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" class="chk-fisik rounded text-red-600" value="Tabung Dibalik/Dikocok" checked>
-                            <span>Tabung sudah dibalik/dikocok (mencegah serbuk menggumpal)</span>
-                        </label>
+            <form onsubmit="saveInspection(event)" class="space-y-3 text-sm">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Jenis APAR</label>
+                        <input type="text" id="inpJenis" class="w-full border border-slate-300 rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Isi Tabung</label>
+                        <input type="text" id="inpIsi" class="w-full border border-slate-300 rounded-xl px-3 py-2">
                     </div>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Kesimpulan Status APAR *</label>
-                    <select id="inpStatus" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
-                        <option value="BAIK">✅ BAIK (Siap Pakai)</option>
-                        <option value="PERLU REFILL">⚠️ PERLU REFILL (Isi Ulang)</option>
-                        <option value="RUSAK">❌ RUSAK (Tarik / Ganti Unit)</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Masa Berlaku</label>
+                        <input type="text" id="inpMasa" class="w-full border border-slate-300 rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">QTY</label>
+                        <input type="number" id="inpQty" min="0" class="w-full border border-slate-300 rounded-xl px-3 py-2">
+                    </div>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Nama Petugas K3 / Teknisi *</label>
-                    <input type="text" id="inpPetugas" required placeholder="Masukkan nama Anda..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan</label>
+                    <input type="text" id="inpKet" class="w-full border border-slate-300 rounded-xl px-3 py-2">
                 </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Catatan Tambahan (Opsional)</label>
-                    <textarea id="inpCatatan" rows="2" placeholder="Contoh: Kondisi bersih, posisi mudah dijangkau" class="w-full border border-slate-300 rounded-xl px-3 py-2"></textarea>
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">
-                    <i class="fas fa-save mr-1"></i> Simpan Hasil Inspeksi
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">
+                    Simpan Perubahan
                 </button>
             </form>
         </div>
@@ -209,8 +172,8 @@
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const kodeApar = params.get('kode') || params.get('unit');
-        let unitSchedules = [];
+        const noUrut = params.get('no');
+        let currentUnit = null;
 
         function showToast(msg, isErr = false) {
             const el = document.createElement('div');
@@ -220,176 +183,101 @@
             setTimeout(() => el.remove(), 4000);
         }
 
-        async function loadUnitApar() {
+        async function loadUnit() {
             const statusBox = document.getElementById('statusBox');
-            if (!kodeApar) {
-                statusBox.innerHTML = `<p class="text-red-600 font-bold">Kode APAR tidak ditemukan di URL QR Code.</p>`;
+            if (!noUrut) {
+                statusBox.innerHTML = `<p class="text-red-600 font-bold">Nomor urut APAR tidak ditemukan pada URL QR Code.</p>`;
                 return;
             }
 
-            const { data, error } = await sb.from('apar').select('*').eq('kode_apar', kodeApar);
-            if (error || !data || data.length === 0) {
-                statusBox.innerHTML = `<p class="text-red-600 font-bold">Data unit APAR "${escapeHtml(kodeApar)}" tidak terdaftar di sistem.</p>`;
+            const { data, error } = await sb.from('apar').select('*').eq('no_urut', Number(noUrut)).single();
+            if (error || !data) {
+                statusBox.innerHTML = `<p class="text-red-600 font-bold">Data APAR No. ${escapeHtml(noUrut)} tidak ditemukan.</p>`;
                 return;
             }
 
-            unitSchedules = data.sort((a, b) => new Date(a.tgl_inspeksi) - new Date(b.tgl_inspeksi));
-            renderUnitDetail();
-        }
-
-        function renderUnitDetail() {
+            currentUnit = data;
             document.getElementById('statusBox').classList.add('hidden');
             document.getElementById('unitCard').classList.remove('hidden');
-            document.getElementById('historySection').classList.remove('hidden');
 
-            const info = unitSchedules[0];
-            const latest = [...unitSchedules].reverse().find(s => s.status !== 'Terjadwal') || info;
-            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('badgeKode').textContent = data.kode_ruangan || '-';
+            document.getElementById('txtNoUrut').textContent = `APAR No. ${data.no_urut}`;
+            document.getElementById('txtLokasi').textContent = data.nama_lokasi || '-';
+            document.getElementById('txtJenis').textContent = data.jenis_apar || '-';
+            document.getElementById('txtIsiQty').textContent = `${data.isi_tabung || '-'} (${data.qty ?? 0} Unit)`;
+            document.getElementById('txtMasaBerlaku').textContent = data.masa_berlaku || '-';
+            document.getElementById('txtKeterangan').textContent = data.keterangan || '-';
 
-            document.getElementById('badgeKategori').textContent = info.kategori_gedung || 'APAR';
-            document.getElementById('txtKodeApar').textContent = info.kode_apar;
-            document.getElementById('txtLokasi').textContent = `${info.gedung || ''} • ${info.titik_lokasi || ''}`;
-            document.getElementById('txtMedia').textContent = `${info.jenis_media || '-'} (${info.kapasitas || '-'})`;
-            document.getElementById('txtMerk').textContent = info.merk || '-';
-            document.getElementById('txtExpired').textContent = info.tgl_kadaluarsa || '-';
-
-            const isExpired = info.tgl_kadaluarsa && info.tgl_kadaluarsa < today;
-            if (isExpired) document.getElementById('expiredWarning').classList.remove('hidden');
-
+            const qtyNum = Number(data.qty) || 0;
             const pill = document.getElementById('statusPill');
-            if (latest.status === 'RUSAK') {
-                pill.textContent = 'RUSAK';
-                pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-red-600 text-white';
-            } else if (latest.status === 'PERLU REFILL' || isExpired) {
-                pill.textContent = 'PERLU REFILL';
-                pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500 text-white';
+            if (qtyNum === 0) {
+                pill.textContent = 'TIDAK ADA';
+                pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-slate-600 text-white';
             } else {
-                pill.textContent = 'SIAP PAKAI';
+                pill.textContent = (data.keterangan || 'TERSEDIA').toUpperCase();
                 pill.className = 'px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500 text-white';
             }
-
-            const doneCount = unitSchedules.filter(s => s.status === 'BAIK').length;
-            document.getElementById('progressText').textContent = `${doneCount}/${unitSchedules.length} Selesai`;
-
-            const listEl = document.getElementById('scheduleList');
-            listEl.innerHTML = unitSchedules.map((s, idx) => {
-                let badge = 'bg-slate-100 text-slate-600';
-                if (s.status === 'BAIK') badge = 'bg-emerald-100 text-emerald-700';
-                else if (s.status === 'PERLU REFILL') badge = 'bg-amber-100 text-amber-700';
-                else if (s.status === 'RUSAK') badge = 'bg-red-100 text-red-700';
-
-                return `
-                    <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-                        <div>
-                            <div class="font-bold text-slate-800">Cek ke-${idx + 1} • ${escapeHtml(s.tgl_inspeksi)}</div>
-                            <div class="text-slate-500 mt-0.5">Tekanan: ${escapeHtml(s.tekanan_bar || 'Normal')} ${s.petugas ? `• Oleh: <b>${escapeHtml(s.petugas)}</b>` : ''}</div>
-                            ${s.catatan ? `<div class="text-slate-400 italic mt-0.5">"${escapeHtml(s.catatan)}"</div>` : ''}
-                        </div>
-                        <span class="px-2.5 py-1 rounded-lg font-bold ${badge}">${escapeHtml(s.status)}</span>
-                    </div>
-                `;
-            }).join('');
         }
 
         function openReportModal() {
             document.getElementById('reportModal').classList.remove('hidden');
             document.getElementById('reportModal').classList.add('flex');
         }
-
         function closeReportModal() {
             document.getElementById('reportModal').classList.add('hidden');
             document.getElementById('reportModal').classList.remove('flex');
         }
 
-        async function submitPublicReport(e) {
+        async function submitReport(e) {
             e.preventDefault();
-            const info = unitSchedules[0];
-            const today = new Date().toISOString().split('T')[0];
-            const kendala = document.getElementById('repKendala').value;
-            const pelapor = document.getElementById('repPelapor').value;
-            const catatan = document.getElementById('repCatatan').value;
+            const pelapor = document.getElementById('repPelapor').value.trim();
+            const kondisi = document.getElementById('repKondisi').value;
+            const catatan = document.getElementById('repCatatan').value.trim();
+            const ketBaru = `Lapor (${pelapor}): ${kondisi}${catatan ? ' - ' + catatan : ''}`;
 
-            const statusBaru = kendala.includes('Refill') ? 'PERLU REFILL' : 'RUSAK';
-            const tekananBaru = kendala.includes('Tekanan') ? 'Kurang / Merah' : 'Perlu Cek';
-
-            const { error } = await sb.from('apar').insert([{
-                kode_apar: info.kode_apar,
-                kategori_gedung: info.kategori_gedung,
-                gedung: info.gedung,
-                titik_lokasi: info.titik_lokasi,
-                merk: info.merk,
-                jenis_media: info.jenis_media,
-                kapasitas: info.kapasitas,
-                tgl_kadaluarsa: info.tgl_kadaluarsa,
-                tgl_inspeksi: today,
-                tekanan_bar: tekananBaru,
-                kondisi_fisik: kendala,
-                status: statusBaru,
-                petugas: `Laporan: ${pelapor}`,
-                catatan: `[${kendala}] ${catatan}`
-            }]);
+            const { error } = await sb.from('apar').update({
+                keterangan: ketBaru,
+                updated_at: new Date().toISOString()
+            }).eq('no_urut', currentUnit.no_urut);
 
             if (error) return showToast('Gagal mengirim laporan: ' + error.message, true);
-
-            document.getElementById('reportForm').reset();
             closeReportModal();
-            showToast('Laporan kerusakan APAR berhasil dikirim!');
-            loadUnitApar();
+            showToast('Laporan kendala APAR berhasil diperbarui!');
+            loadUnit();
         }
 
-        function openQuickCheck() {
-            if (!window.isTeknisiUser) return;
-            const select = document.getElementById('selectScheduleId');
-            select.innerHTML = unitSchedules.map((s, idx) =>
-                `<option value="${Number(s.id)}">Cek ke-${idx + 1} (${escapeHtml(s.tgl_inspeksi)}) - [${escapeHtml(s.status)}]</option>`
-            ).join('');
-
-            const nextPending = unitSchedules.find(s => s.status === 'Terjadwal');
-            if (nextPending) select.value = nextPending.id;
-
-            onSelectSchedule();
+        function openCheckModal() {
+            document.getElementById('inpJenis').value = currentUnit.jenis_apar || '';
+            document.getElementById('inpIsi').value = currentUnit.isi_tabung || '';
+            document.getElementById('inpMasa').value = currentUnit.masa_berlaku || '';
+            document.getElementById('inpQty').value = currentUnit.qty ?? 0;
+            document.getElementById('inpKet').value = currentUnit.keterangan || '';
             document.getElementById('checkModal').classList.remove('hidden');
             document.getElementById('checkModal').classList.add('flex');
         }
-
-        function onSelectSchedule() {
-            const id = document.getElementById('selectScheduleId').value;
-            const item = unitSchedules.find(s => String(s.id) === String(id));
-            if (!item) return;
-            document.getElementById('inpPetugas').value = item.petugas || '';
-            document.getElementById('inpCatatan').value = item.catatan || '';
-        }
-
-        async function saveMobileInspection(e) {
-            e.preventDefault();
-            if (!window.isTeknisiUser) return;
-
-            const id = document.getElementById('selectScheduleId').value;
-            const checkedFisik = Array.from(document.querySelectorAll('.chk-fisik:checked')).map(c => c.value).join(', ');
-            const today = new Date().toISOString().split('T')[0];
-
-            const { error } = await sb.from('apar').update({
-                tgl_inspeksi: today,
-                tekanan_bar: document.getElementById('inpTekanan').value,
-                kondisi_fisik: checkedFisik || 'Dicek lapangan',
-                status: document.getElementById('inpStatus').value,
-                petugas: document.getElementById('inpPetugas').value,
-                catatan: document.getElementById('inpCatatan').value
-            }).eq('id', id);
-
-            if (error) return showToast('Gagal menyimpan: ' + error.message, true);
-
-            closeCheckModal();
-            showToast('Hasil inspeksi APAR diperbarui!');
-            loadUnitApar();
-        }
-
         function closeCheckModal() {
             document.getElementById('checkModal').classList.add('hidden');
             document.getElementById('checkModal').classList.remove('flex');
         }
 
-        document.addEventListener('DOMContentLoaded', loadUnitApar);
+        async function saveInspection(e) {
+            e.preventDefault();
+            const { error } = await sb.from('apar').update({
+                jenis_apar: document.getElementById('inpJenis').value.trim() || '-',
+                isi_tabung: document.getElementById('inpIsi').value.trim() || '-',
+                masa_berlaku: document.getElementById('inpMasa').value.trim() || '-',
+                qty: parseInt(document.getElementById('inpQty').value, 10) || 0,
+                keterangan: document.getElementById('inpKet').value.trim() || '-',
+                updated_at: new Date().toISOString()
+            }).eq('no_urut', currentUnit.no_urut);
+
+            if (error) return showToast('Gagal menyimpan: ' + error.message, true);
+            closeCheckModal();
+            showToast('Data APAR berhasil diperbarui!');
+            loadUnit();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUnit);
     </script>
 </body>
 </html>

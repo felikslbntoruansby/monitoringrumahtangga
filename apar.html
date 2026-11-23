@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen & Inspeksi APAR - Poltekbang Surabaya</title>
+    <title>Data & Monitoring APAR - Poltekbang Surabaya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="auth-guard.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -24,8 +25,8 @@
                     <i class="fas fa-fire-extinguisher text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Monitoring & Inspeksi APAR</h1>
-                    <p class="text-xs text-red-100">Sistem Manajemen Pemeliharaan Alat Pemadam Api Ringan</p>
+                    <h1 class="font-bold text-lg leading-tight">Data & Monitoring APAR</h1>
+                    <p class="text-xs text-red-100">Tersinkronisasi Otomatis dengan Spreadsheet DATA APAR Poltekbang Surabaya</p>
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
@@ -36,7 +37,7 @@
                 <a href="ac.html" class="px-3 py-1.5 rounded-lg bg-red-800/70 hover:bg-red-800 transition">
                     <i class="fas fa-snowflake mr-1"></i> Unit AC
                 </a>
-                <button onclick="logoutApp()" class="px-3 py-1.5 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white transition cursor-pointer">
+                <button onclick="logoutApp()" class="px-3 py-1.5 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white transition cursor-pointer" title="Keluar">
                     <i class="fas fa-right-from-bracket"></i>
                 </button>
             </div>
@@ -47,96 +48,100 @@
     <main class="max-w-7xl mx-auto px-4 py-6">
 
         <!-- RINGKASAN STATISTIK -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <p class="text-xs text-slate-500 font-semibold uppercase">Total Unit APAR</p>
-                <p id="statTotalUnit" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
+                <p class="text-xs text-slate-500 font-semibold uppercase">Total Titik Lokasi</p>
+                <p id="statTotalTitik" class="text-2xl font-extrabold text-slate-800 mt-1">0</p>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-200">
-                <p class="text-xs text-emerald-600 font-semibold uppercase">Kondisi Baik</p>
-                <p id="statBaik" class="text-2xl font-extrabold text-emerald-600 mt-1">0</p>
+                <p class="text-xs text-emerald-600 font-semibold uppercase">Total Tabung (QTY)</p>
+                <p id="statTotalQty" class="text-2xl font-extrabold text-emerald-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold uppercase">Titik Kosong / Tidak Ada</p>
+                <p id="statKosong" class="text-2xl font-extrabold text-slate-600 mt-1">0</p>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200">
-                <p class="text-xs text-amber-600 font-semibold uppercase">Perlu Refill / Expired</p>
-                <p id="statRefill" class="text-2xl font-extrabold text-amber-600 mt-1">0</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-red-200">
-                <p class="text-xs text-red-600 font-semibold uppercase">Rusak / Tekanan Drop</p>
-                <p id="statRusak" class="text-2xl font-extrabold text-red-600 mt-1">0</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-200 col-span-2 md:col-span-1">
-                <p class="text-xs text-blue-600 font-semibold uppercase">Jadwal Bulan Ini</p>
-                <p id="statBulanIni" class="text-2xl font-extrabold text-blue-600 mt-1">0</p>
+                <p class="text-xs text-amber-600 font-semibold uppercase">Perlu Perhatian / Expired</p>
+                <p id="statPerhatian" class="text-2xl font-extrabold text-amber-600 mt-1">0</p>
             </div>
         </div>
 
-        <!-- TOOLBAR PENCARIAN -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex justify-end items-center">
+        <!-- TOOLBAR PENCARIAN & FILTER -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <select id="filterStatus" onchange="renderTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-red-500 focus:outline-none">
+                    <option value="">Semua Keterangan</option>
+                    <option value="ADA">Unit Tersedia (QTY &gt; 0)</option>
+                    <option value="KOSONG">Tidak Ada (QTY = 0)</option>
+                    <option value="PERHATIAN">Perlu Perhatian / Expired</option>
+                </select>
+                <button onclick="fetchAparData()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition cursor-pointer">
+                    <i class="fas fa-rotate mr-1"></i> Refresh
+                </button>
+            </div>
             <div class="relative w-full md:w-80">
                 <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
-                <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari kode, gedung, merk..."
-                    class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:outline-none">
+                <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari lokasi, kode ruangan, jenis APAR..."
+                    class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-red-500 focus:outline-none">
             </div>
         </div>
 
-        <!-- TAB KATEGORI GEDUNG -->
+        <!-- TAB KODE RUANGAN / GEDUNG & TABEL -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2">
-                <button onclick="switchTab('G. UMUM')" id="tab-G. UMUM" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap tab-active">G. UMUM</button>
-                <button onclick="switchTab('G. LAB')" id="tab-G. LAB" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. LAB</button>
-                <button onclick="switchTab('G. ASRAMA')" id="tab-G. ASRAMA" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. ASRAMA</button>
-                <button onclick="switchTab('G. TPU')" id="tab-G. TPU" class="tab-btn px-5 py-3.5 text-sm font-medium text-slate-600 whitespace-nowrap">G. TPU</button>
-                <button onclick="switchTab('MONTHLY')" id="tab-MONTHLY" class="tab-btn px-5 py-3.5 text-sm font-medium text-blue-600 whitespace-nowrap">
-                    <i class="fas fa-calendar-alt mr-1"></i> JADWAL BULANAN
+            <div id="tabContainer" class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-2">
+                <button onclick="switchTab('ALL')" id="tab-ALL" class="tab-btn px-4 py-3 text-xs font-medium text-slate-600 whitespace-nowrap tab-active">
+                    SEMUA LOKASI
                 </button>
             </div>
 
-            <!-- FILTER BULAN -->
-            <div id="monthlyFilterBar" class="hidden p-4 bg-blue-50/60 border-b border-slate-200 flex items-center gap-3">
-                <label class="text-sm font-semibold text-slate-700">Pilih Bulan Inspeksi:</label>
-                <input type="month" id="monthPicker" onchange="renderMonthlyView()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white">
-            </div>
-
-            <!-- TABEL MATRIKS UNIT APAR -->
-            <div id="matrixView" class="overflow-x-auto">
+            <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
-                            <th class="p-3 font-bold sticky left-0 bg-slate-100 z-10">Kode & Lokasi APAR</th>
-                            <th class="p-3 font-bold">Spesifikasi & Expired</th>
-                            <th class="p-3 font-bold text-center">Matriks Inspeksi Rutin (Bulan ke-1 s/d 12)</th>
-                            <th class="p-3 font-bold text-center">Lihat QR</th>
+                        <tr class="bg-amber-50/90 text-slate-700 text-[11px] uppercase border-b border-slate-200">
+                            <th class="p-3 font-extrabold text-center w-14">No.</th>
+                            <th class="p-3 font-extrabold">Nama Lokasi</th>
+                            <th class="p-3 font-extrabold text-center">Kode Ruangan</th>
+                            <th class="p-3 font-extrabold text-center">Jenis APAR</th>
+                            <th class="p-3 font-extrabold text-center">Isi Tabung</th>
+                            <th class="p-3 font-extrabold text-center">Masa Berlaku</th>
+                            <th class="p-3 font-extrabold text-center">QTY</th>
+                            <th class="p-3 font-extrabold">Keterangan</th>
+                            <th class="p-3 font-extrabold text-center">QR Code</th>
                         </tr>
                     </thead>
-                    <tbody id="aparTableBody" class="divide-y divide-slate-200 text-sm">
-                        <tr><td colspan="4" class="p-8 text-center text-slate-400">Memuat data APAR...</td></tr>
+                    <tbody id="aparTableBody" class="divide-y divide-slate-200 text-xs">
+                        <tr><td colspan="9" class="p-8 text-center text-slate-400">Memuat 182 data APAR dari Supabase...</td></tr>
                     </tbody>
-                </table>
-            </div>
-
-            <!-- TABEL JADWAL BULANAN -->
-            <div id="monthlyView" class="hidden overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
-                            <th class="p-3 font-bold">Tanggal Jadwal</th>
-                            <th class="p-3 font-bold">Kode APAR</th>
-                            <th class="p-3 font-bold">Gedung / Titik Lokasi</th>
-                            <th class="p-3 font-bold">Media & Kapasitas</th>
-                            <th class="p-3 font-bold">Tekanan & Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="monthlyTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
                 </table>
             </div>
         </div>
     </main>
 
+    <!-- MODAL QR CODE -->
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6 text-center shadow-2xl border border-slate-200">
+            <div class="text-[10px] font-bold uppercase tracking-widest text-red-700">Poltekbang Surabaya</div>
+            <h3 id="qrTitle" class="font-extrabold text-base text-slate-900 mt-1">APAR No. 1</h3>
+            <p id="qrSubtitle" class="text-xs text-slate-500 mb-4">-</p>
+            <div id="qrBox" class="flex justify-center p-3 bg-white border border-slate-200 rounded-xl mx-auto w-fit"></div>
+            <a id="qrOpenLink" href="#" target="_blank" class="mt-3 inline-block text-xs font-bold text-red-700 hover:underline">
+                <i class="fas fa-external-link-alt mr-1"></i> Buka Kartu Kendali Digital
+            </a>
+            <div class="mt-4 flex gap-2">
+                <button onclick="closeQrModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Tutup</button>
+                <button onclick="window.print()" class="flex-1 py-2 bg-red-700 hover:bg-red-800 text-white rounded-xl text-xs font-bold cursor-pointer">
+                    <i class="fas fa-print mr-1"></i> Cetak QR
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
         let allAparRows = [];
-        let currentTab = 'G. UMUM';
+        let currentTab = 'ALL';
 
         function showToast(msg, isErr = false) {
             const el = document.createElement('div');
@@ -146,160 +151,141 @@
             setTimeout(() => el.remove(), 4000);
         }
 
-        async function fetchAparData() {
-            const { data, error } = await sb.from('apar').select('*').order('id', { ascending: true });
-            if (error) return showToast('Gagal memuat data APAR: ' + error.message, true);
-            allAparRows = data || [];
-            updateStats();
-            if (currentTab === 'MONTHLY') renderMonthlyView();
-            else renderTable();
+        function isPerhatianItem(r) {
+            if ((Number(r.qty) || 0) === 0) return false;
+            const ket = (r.keterangan || '').toLowerCase();
+            const mb = (r.masa_berlaku || '').toLowerCase();
+            const parsedDate = r.masa_berlaku ? new Date(r.masa_berlaku) : null;
+            const isExpired = parsedDate && !isNaN(parsedDate) && parsedDate < new Date();
+            return isExpired || mb.includes('tidak terbaca') || ket.includes('rusak') || ket.includes('habis') || ket.includes('drop') || ket.includes('tdk ada tgl');
         }
 
-        function groupUnits(rows) {
-            const map = {};
-            rows.forEach(r => {
-                if (!map[r.kode_apar]) {
-                    map[r.kode_apar] = { ...r, schedules: [] };
-                }
-                map[r.kode_apar].schedules.push(r);
+        async function fetchAparData() {
+            const { data, error } = await sb
+                .from('apar')
+                .select('*')
+                .order('no_urut', { ascending: true });
+
+            if (error) return showToast('Gagal memuat data APAR: ' + error.message, true);
+            allAparRows = data || [];
+            buildTabs();
+            updateStats();
+            renderTable();
+        }
+
+        function buildTabs() {
+            const container = document.getElementById('tabContainer');
+            const codes = [...new Set(allAparRows.map(r => r.kode_ruangan).filter(c => c && c !== '-'))];
+            let html = `<button onclick="switchTab('ALL')" id="tab-ALL" class="tab-btn px-4 py-3 text-xs font-medium text-slate-600 whitespace-nowrap ${currentTab === 'ALL' ? 'tab-active' : ''}">SEMUA LOKASI (${allAparRows.length})</button>`;
+            codes.forEach(code => {
+                const count = allAparRows.filter(r => r.kode_ruangan === code).length;
+                html += `<button onclick="switchTab('${escapeHtml(code)}')" id="tab-${escapeHtml(code)}" class="tab-btn px-4 py-3 text-xs font-medium text-slate-600 whitespace-nowrap ${currentTab === code ? 'tab-active' : ''}">${escapeHtml(code)} (${count})</button>`;
             });
-            return Object.values(map).map(u => {
-                u.schedules.sort((a, b) => new Date(a.tgl_inspeksi) - new Date(b.tgl_inspeksi));
-                return u;
-            });
+            container.innerHTML = html;
         }
 
         function updateStats() {
-            const units = groupUnits(allAparRows);
-            const today = new Date().toISOString().split('T')[0];
-            const thisMonth = today.slice(0, 7);
+            const totalTitik = allAparRows.length;
+            const totalQty = allAparRows.reduce((sum, r) => sum + (Number(r.qty) || 0), 0);
+            const kosong = allAparRows.filter(r => (Number(r.qty) || 0) === 0).length;
+            const perhatian = allAparRows.filter(isPerhatianItem).length;
 
-            let baik = 0, refill = 0, rusak = 0;
-            units.forEach(u => {
-                const latest = u.schedules[u.schedules.length - 1];
-                const isExpired = u.tgl_kadaluarsa && u.tgl_kadaluarsa < today;
-                if (latest.status === 'RUSAK') rusak++;
-                else if (latest.status === 'PERLU REFILL' || isExpired) refill++;
-                else baik++;
-            });
+            document.getElementById('statTotalTitik').textContent = totalTitik;
+            document.getElementById('statTotalQty').textContent = totalQty;
+            document.getElementById('statKosong').textContent = kosong;
+            document.getElementById('statPerhatian').textContent = perhatian;
+        }
 
-            const bulanIni = allAparRows.filter(r => r.tgl_inspeksi && r.tgl_inspeksi.startsWith(thisMonth)).length;
-
-            document.getElementById('statTotalUnit').textContent = units.length;
-            document.getElementById('statBaik').textContent = baik;
-            document.getElementById('statRefill').textContent = refill;
-            document.getElementById('statRusak').textContent = rusak;
-            document.getElementById('statBulanIni').textContent = bulanIni;
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) activeBtn.classList.add('tab-active');
+            renderTable();
         }
 
         function renderTable() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filteredRows = allAparRows.filter(r => r.kategori_gedung === currentTab);
-            const units = groupUnits(filteredRows).filter(u =>
-                u.kode_apar.toLowerCase().includes(query) ||
-                (u.gedung || '').toLowerCase().includes(query) ||
-                (u.titik_lokasi || '').toLowerCase().includes(query) ||
-                (u.merk || '').toLowerCase().includes(query)
-            );
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            const filtered = allAparRows.filter(r => {
+                const matchTab = currentTab === 'ALL' || r.kode_ruangan === currentTab;
+                const qtyNum = Number(r.qty) || 0;
+                let matchStatus = true;
+                if (statusFilter === 'ADA') matchStatus = qtyNum > 0;
+                else if (statusFilter === 'KOSONG') matchStatus = qtyNum === 0;
+                else if (statusFilter === 'PERHATIAN') matchStatus = isPerhatianItem(r);
+
+                const text = `${r.no_urut} ${r.nama_lokasi || ''} ${r.kode_ruangan || ''} ${r.jenis_apar || ''} ${r.isi_tabung || ''} ${r.masa_berlaku || ''} ${r.keterangan || ''}`.toLowerCase();
+                return matchTab && matchStatus && text.includes(query);
+            });
 
             const tbody = document.getElementById('aparTableBody');
-            if (units.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400">Belum ada data unit APAR di kategori ${currentTab}.</td></tr>`;
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">Tidak ada data APAR yang sesuai filter.</td></tr>`;
                 return;
             }
 
-            const today = new Date().toISOString().split('T')[0];
-            tbody.innerHTML = units.map(u => {
-                const isExpired = u.tgl_kadaluarsa && u.tgl_kadaluarsa < today;
-                const expBadge = isExpired
-                    ? `<span class="bg-red-100 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded">EXPIRED: ${u.tgl_kadaluarsa}</span>`
-                    : `<span class="bg-slate-100 text-slate-600 text-[11px] font-medium px-2 py-0.5 rounded">Exp: ${u.tgl_kadaluarsa || '-'}</span>`;
+            tbody.innerHTML = filtered.map(r => {
+                const qtyNum = Number(r.qty) || 0;
+                const isKosong = qtyNum === 0;
+                const perhatian = isPerhatianItem(r);
 
-                const boxes = u.schedules.slice(0, 12).map((s, idx) => {
-                    let color = 'bg-slate-100 text-slate-600 border-slate-300';
-                    if (s.status === 'BAIK') color = 'bg-emerald-500 text-white border-emerald-600';
-                    else if (s.status === 'PERLU REFILL') color = 'bg-amber-500 text-white border-amber-600';
-                    else if (s.status === 'RUSAK') color = 'bg-red-600 text-white border-red-700';
-
-                    return `
-                        <div title="${s.tgl_inspeksi} - ${s.status}"
-                            class="w-11 h-11 rounded-lg border text-[10px] font-bold flex flex-col items-center justify-center select-none ${color}">
-                            <span>Cek ${idx + 1}</span>
-                            <span class="text-[9px] opacity-90">${s.tgl_inspeksi.slice(5)}</span>
-                        </div>
-                    `;
-                }).join('');
+                let ketClass = 'bg-emerald-100 text-emerald-700';
+                if (isKosong) ketClass = 'bg-slate-100 text-slate-500';
+                else if (perhatian) ketClass = 'bg-amber-100 text-amber-800';
 
                 return `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 sticky left-0 bg-white">
-                            <div class="font-bold text-red-700">${u.kode_apar}</div>
-                            <div class="text-xs font-semibold text-slate-700">${u.gedung || ''}</div>
-                            <div class="text-xs text-slate-500">${u.titik_lokasi || ''}</div>
-                        </td>
-                        <td class="p-3">
-                            <div class="font-semibold text-slate-800">${u.jenis_media} (${u.kapasitas})</div>
-                            <div class="text-xs text-slate-500 mb-1">Merk: ${u.merk || '-'}</div>
-                            ${expBadge}
-                        </td>
-                        <td class="p-3">
-                            <div class="flex flex-wrap gap-1.5 justify-center">${boxes}</div>
-                        </td>
+                    <tr class="hover:bg-slate-50 transition ${isKosong ? 'bg-slate-50/60 text-slate-500' : ''}">
+                        <td class="p-3 text-center font-bold text-slate-700">${r.no_urut}</td>
+                        <td class="p-3 font-semibold ${isKosong ? 'text-slate-600' : 'text-slate-900'}">${escapeHtml(r.nama_lokasi || '-')}</td>
+                        <td class="p-3 text-center font-mono font-bold text-red-700">${escapeHtml(r.kode_ruangan || '-')}</td>
                         <td class="p-3 text-center">
-                            <a href="unit-apar.html?kode=${encodeURIComponent(u.kode_apar)}" target="_blank"
-                                class="inline-flex p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs" title="Lihat Kartu Kendali QR">
-                                <i class="fas fa-qrcode"></i>
-                            </a>
+                            ${r.jenis_apar && r.jenis_apar !== '-'
+                                ? `<span class="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-semibold">${escapeHtml(r.jenis_apar)}</span>`
+                                : '<span class="text-slate-400">-</span>'}
+                        </td>
+                        <td class="p-3 text-center font-medium">${escapeHtml(r.isi_tabung || '-')}</td>
+                        <td class="p-3 text-center font-semibold ${perhatian ? 'text-amber-700' : 'text-slate-700'}">${escapeHtml(r.masa_berlaku || '-')}</td>
+                        <td class="p-3 text-center font-extrabold ${isKosong ? 'text-slate-400' : 'text-slate-900'}">${isKosong ? '-' : qtyNum}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${ketClass}">
+                                ${escapeHtml(r.keterangan || '-')}
+                            </span>
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <button onclick="openQrModal(${r.no_urut})" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer" title="Cetak QR & Kartu Kendali">
+                                <i class="fas fa-qrcode"></i> QR
+                            </button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
-            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+        function openQrModal(noUrut) {
+            const item = allAparRows.find(r => r.no_urut === noUrut);
+            if (!item) return;
 
-            if (tab === 'MONTHLY') {
-                document.getElementById('matrixView').classList.add('hidden');
-                document.getElementById('monthlyView').classList.remove('hidden');
-                document.getElementById('monthlyFilterBar').classList.remove('hidden');
-                if (!document.getElementById('monthPicker').value) {
-                    document.getElementById('monthPicker').value = new Date().toISOString().slice(0, 7);
-                }
-                renderMonthlyView();
-            } else {
-                document.getElementById('matrixView').classList.remove('hidden');
-                document.getElementById('monthlyView').classList.add('hidden');
-                document.getElementById('monthlyFilterBar').classList.add('hidden');
-                renderTable();
-            }
+            document.getElementById('qrTitle').textContent = `APAR No. ${item.no_urut} (${item.kode_ruangan || '-'})`;
+            document.getElementById('qrSubtitle').textContent = `${item.nama_lokasi || '-'} • ${item.jenis_apar || '-'} ${item.isi_tabung || ''}`;
+
+            const detailUrl = `${window.location.origin}/unit-apar.html?no=${item.no_urut}`;
+            document.getElementById('qrOpenLink').href = detailUrl;
+
+            const box = document.getElementById('qrBox');
+            box.innerHTML = '';
+            new QRCode(box, { text: detailUrl, width: 170, height: 170 });
+
+            const modal = document.getElementById('qrModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
-        function renderMonthlyView() {
-            const month = document.getElementById('monthPicker').value;
-            const list = allAparRows.filter(r => r.tgl_inspeksi && r.tgl_inspeksi.startsWith(month));
-            const tbody = document.getElementById('monthlyTableBody');
-
-            if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Tidak ada jadwal inspeksi APAR pada bulan ${month}.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = list.map(r => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3 font-semibold">${r.tgl_inspeksi}</td>
-                    <td class="p-3 font-bold text-red-700">${r.kode_apar}</td>
-                    <td class="p-3">${r.gedung} - ${r.titik_lokasi}</td>
-                    <td class="p-3">${r.jenis_media} (${r.kapasitas})</td>
-                    <td class="p-3">
-                        <span class="px-2 py-1 rounded-full text-xs font-bold ${r.status === 'BAIK' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
-                            ${r.status} (${r.tekanan_bar || 'Normal'})
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
+        function closeQrModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
         document.addEventListener('DOMContentLoaded', fetchAparData);
