@@ -108,8 +108,8 @@
             <div id="view-bulan" class="hidden p-4 space-y-3">
                 <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <span class="font-extrabold text-[#14532D]"><i class="fas fa-calculator mr-1"></i> Input Pemakaian Tahun <span class="active-year-label">2026</span> (Januari – Desember):</span>
-                        Isi jumlah hari pemakaian tiap bulan lalu klik <b>Simpan &amp; Hitung Ulang</b>.
+                        <span class="font-extrabold text-[#14532D]"><i class="fas fa-calculator mr-1"></i> Input Hari Kerja &amp; Pemakaian Tahun <span class="active-year-label">2026</span> (Januari – Desember):</span>
+                        Sesuaikan jumlah <b>HARI KERJA</b> (baris kuning) dan hari pemakaian armada lalu klik <b>Simpan &amp; Hitung Ulang</b>.
                     </div>
                     <button onclick="saveBatchBulan()" id="btnSaveBatch" class="px-4 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer">
                         <i class="fas fa-cloud-arrow-up mr-1"></i> Simpan &amp; Hitung Ulang Tahun <span class="active-year-label">2026</span>
@@ -298,13 +298,14 @@
                     const stickyCls = isSticky ? `sticky left-0 ${stickyBg} z-10 min-w-[190px] font-bold` : '';
                     const alignCls = cIdx === 1 ? 'text-left' : 'text-center';
 
-                    const canInput = isEditableSheet && window.isAdminUser && rIdx > headerIdx && !isHariKerja && !isTotalRow && cIdx >= 2 && cIdx <= 13;
+                    const canInput = isEditableSheet && window.isAdminUser && rIdx > headerIdx && !isTotalRow && cIdx >= 2 && cIdx <= 13;
                     if (canInput) {
+                        const inputBg = isHariKerja ? 'bg-amber-100 border-amber-400 text-amber-950 font-extrabold' : 'bg-white border-slate-300 font-bold';
                         return `
                             <td class="p-1.5 ${alignCls} ${stickyCls} border-r border-slate-100">
                                 <input type="number" step="any" value="${escapeHtml(strVal)}"
                                     oninput="queueCellUpdate(${rIdx + 1}, ${cIdx + 1}, this.value, this)"
-                                    class="w-14 text-center border border-slate-300 rounded-lg px-1 py-1 text-[11px] font-bold bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                    class="w-14 text-center border rounded-lg px-1 py-1 text-[11px] ${inputBg} focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             </td>
                         `;
                     }
