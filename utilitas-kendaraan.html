@@ -192,7 +192,7 @@
             badge.innerText = `Memuat ${selectedYear}...`;
 
             try {
-                const res = await fetch(`${APPS_SCRIPT_URL}?year=${encodeURIComponent(selectedYear)}`);
+                const res = await fetch(`${APPS_SCRIPT_URL}?year=${encodeURIComponent(selectedYear)}&t=${Date.now()}`);
                 const json = await res.json();
                 if (json.status !== 'success') throw new Error(json.message || 'Gagal membaca spreadsheet');
 
@@ -231,10 +231,9 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyiapkan ${nextYear}...`;
 
             try {
-                await fetch(APPS_SCRIPT_URL, {
+                const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'create_year',
                         source_year: sourceYear,
@@ -242,14 +241,15 @@
                     })
                 });
 
-                setTimeout(async () => {
-                    selectedYear = nextYear;
-                    if (!availableYears.includes(nextYear)) availableYears.push(nextYear);
-                    await loadUtilitas();
-                    btn.disabled = false;
-                    showToast(`Berhasil! Sheet Tahun ${nextYear} siap diisi mulai Januari–Desember.`);
-                    switchTab('bulan');
-                }, 2200);
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message || 'Gagal membuat tahun baru');
+
+                selectedYear = nextYear;
+                if (!availableYears.includes(nextYear)) availableYears.push(nextYear);
+                await loadUtilitas();
+                btn.disabled = false;
+                showToast(`Berhasil! Sheet Tahun ${nextYear} siap diisi mulai Januari–Desember.`);
+                switchTab('bulan');
             } catch (err) {
                 btn.disabled = false;
                 updateYearLabels();
@@ -344,10 +344,9 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan Tahun ${selectedYear}...`;
 
             try {
-                await fetch(APPS_SCRIPT_URL, {
+                const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'update_batch',
                         year: selectedYear,
@@ -355,13 +354,16 @@
                     })
                 });
 
-                setTimeout(async () => {
-                    await loadUtilitas();
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Tahun <span class="active-year-label">${selectedYear}</span>`;
-                    showToast(`Berhasil! Data Tahun ${selectedYear} telah diperbarui dan dihitung ulang otomatis.`);
-                    switchTab('kendaraan');
-                }, 1500);
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    throw new Error(result.message || 'Gagal menyimpan ke Spreadsheet');
+                }
+
+                await loadUtilitas();
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Tahun <span class="active-year-label">${selectedYear}</span>`;
+                showToast(`Berhasil! Data Tahun ${selectedYear} tersimpan & Sheet KENDARAAN terhitung ulang.`);
+                switchTab('kendaraan');
             } catch (err) {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Tahun <span class="active-year-label">${selectedYear}</span>`;
