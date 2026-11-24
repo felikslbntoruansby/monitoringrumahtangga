@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id" style="visibility:hidden;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilitas Kendaraan Dinas - Poltekbang Surabaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js"></script>
+    <script src="navbar.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .tab-active { border-bottom: 3px solid #14532D; color: #14532D; font-weight: 800; background: #f0fdf4; }
+    </style>
+</head>
+<body class="bg-[#F4F6F9] text-slate-800 min-h-screen antialiased">
+
+    <div id="appShell" data-page="utilitas-kendaraan.html"></div>
+
+    <main class="lg:pl-64 p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+
+        <div id="pageHeader"></div>
+
+        <!-- PANEL STATUS SINKRONISASI SPREADSHEET -->
+        <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-extrabold text-[#0B2545]">Sinkronisasi Dua Arah Google Spreadsheet (Akses Admin)</span>
+                        <span id="syncBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Menghubungkan...</span>
+                    </div>
+                    <p id="syncDesc" class="text-[11px] text-slate-500 mt-0.5">
+                        Input jumlah pemakaian bulanan di <b>Sheet BULAN</b> otomatis memperbarui rumus di <b>Sheet KENDARAAN</b>.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="https://docs.google.com/spreadsheets/d/1x8cEdcmVXasq96KWGsWG3R-esxZsau2U3xml1ZmWVAs/edit?gid=651634409#gid=651634409" target="_blank"
+                   class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-up-right-from-square"></i> Buka Spreadsheet
+                </a>
+                <button onclick="loadUtilitas()" class="px-3.5 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-rotate"></i> Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- PANEL UTAMA TAMPILAN SPREADSHEET -->
+        <div class="bg-white rounded-xl shadow-2xs border border-slate-200 overflow-hidden">
+            <div class="flex flex-wrap justify-between items-center border-b border-slate-200 bg-slate-50 px-3 gap-2">
+                <div class="flex overflow-x-auto">
+                    <button onclick="switchTab('kendaraan')" id="btnTab-kendaraan" class="u-tab-btn px-5 py-3.5 text-xs font-bold text-slate-600 whitespace-nowrap tab-active cursor-pointer">
+                        <i class="fas fa-table mr-1.5"></i> 1. Sheet KENDARAAN (Rekap &amp; %)
+                    </button>
+                    <button onclick="switchTab('bulan')" id="btnTab-bulan" class="u-tab-btn px-5 py-3.5 text-xs font-bold text-slate-600 whitespace-nowrap cursor-pointer">
+                        <i class="fas fa-pen-to-square mr-1.5"></i> 2. Input Pemakaian (Sheet BULAN)
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 py-2">
+                    <input type="search" id="searchSheet" oninput="renderAllSheets()" placeholder="Cari armada / nopol..."
+                        class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <button onclick="exportCurrentExcel()" class="px-3.5 py-1.5 bg-[#0B2545] hover:bg-[#133863] text-white rounded-lg text-xs font-bold transition cursor-pointer">
+                        <i class="fas fa-file-excel mr-1"></i> Ekspor Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 1: SHEET KENDARAAN (HASIL OTOMATIS DARI SPREADSHEET) -->
+            <div id="view-kendaraan" class="p-4 space-y-3">
+                <div class="bg-sky-50/80 border border-sky-200 rounded-xl p-3 text-xs text-slate-700">
+                    <span class="font-extrabold text-[#0B2545]"><i class="fas fa-check-circle text-sky-600 mr-1"></i> Terhubung Otomatis ke Sheet KENDARAAN:</span>
+                    Seluruh kolom kapasitas, frekuensi, rasio bulanan, jumlah, dan persentase (<code>%</code>) di bawah ini ditarik langsung dari Google Spreadsheet Anda.
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table id="tableKendaraan" class="w-full text-left border-collapse text-[11px]">
+                        <tbody id="tbodyKendaraan" class="divide-y divide-slate-200">
+                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet KENDARAAN dari Google Spreadsheet...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW 2: SHEET BULAN (INPUT JUMLAH PEMAKAIAN PER BULAN) -->
+            <div id="view-bulan" class="hidden p-4 space-y-3">
+                <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <span class="font-extrabold text-[#14532D]"><i class="fas fa-calculator mr-1"></i> Input Jumlah Hari Pemakaian Per Bulan:</span>
+                        Ubah angka pada kolom bulan di bawah ini lalu klik <b>Simpan &amp; Hitung Ulang Sheet KENDARAAN</b>.
+                    </div>
+                    <button onclick="saveBatchBulan()" id="btnSaveBatch" class="admin-only px-4 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer">
+                        <i class="fas fa-cloud-arrow-up mr-1"></i> Simpan &amp; Hitung Ulang Sheet KENDARAAN
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                    <table id="tableBulan" class="w-full text-left border-collapse text-[11px]">
+                        <tbody id="tbodyBulan" class="divide-y divide-slate-200">
+                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet BULAN dari Google Spreadsheet...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOeFQWgxdTi8av9b_en_cliuRhnWaifYzwYfWFDc2kiH6hfUHj45MGG63rBwmd4KUj/exec';
+
+        let sheetData = { kendaraan: [], bulan: [] };
+        let pendingUpdates = new Map();
+        let currentTab = 'kendaraan';
+
+        function showToast(msg, isErr = false) {
+            const el = document.createElement('div');
+            el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
+            el.innerText = msg;
+            document.getElementById('toast').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        function switchTab(name) {
+            currentTab = name;
+            ['kendaraan', 'bulan'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.toggle('hidden', t !== name);
+                document.getElementById(`btnTab-${t}`).classList.toggle('tab-active', t === name);
+            });
+        }
+
+        async function loadUtilitas() {
+            const activeRole = (sessionStorage.getItem('rt_poltekbang_role_cache') || '').toUpperCase();
+            if (activeRole && activeRole !== 'ADMIN') {
+                window.location.replace('index.html');
+                return;
+            }
+
+            const badge = document.getElementById('syncBadge');
+            const desc = document.getElementById('syncDesc');
+
+            badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
+            badge.innerText = 'Menyinkronkan...';
+
+            try {
+                const res = await fetch(APPS_SCRIPT_URL);
+                const json = await res.json();
+                if (json.status !== 'success') throw new Error(json.message || 'Gagal membaca spreadsheet');
+
+                sheetData.kendaraan = json.kendaraan || [];
+                sheetData.bulan = json.bulan || [];
+                pendingUpdates.clear();
+
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                badge.innerText = 'Terhubung Live';
+                desc.innerText = `Tersinkronisasi pukul ${new Date().toLocaleTimeString('id-ID')} • Sheet KENDARAAN & Sheet BULAN aktif.`;
+
+                renderAllSheets();
+            } catch (err) {
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700';
+                badge.innerText = 'Gagal Koneksi';
+                desc.innerText = err.message;
+                showToast('Gagal memuat dari Apps Script: ' + err.message, true);
+            }
+        }
+
+        function renderAllSheets() {
+            renderSheetTable('kendaraan', sheetData.kendaraan, 'tbodyKendaraan', false);
+            renderSheetTable('bulan', sheetData.bulan, 'tbodyBulan', true);
+        }
+
+        function renderSheetTable(sheetName, rows, tbodyId, isEditableSheet) {
+            const tbody = document.getElementById(tbodyId);
+            if (!rows || rows.length === 0) {
+                tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-400">Data sheet ${sheetName.toUpperCase()} kosong.</td></tr>`;
+                return;
+            }
+
+            const q = (document.getElementById('searchSheet').value || '').toLowerCase();
+            let headerIdx = rows.findIndex(r => r.some(c => String(c).toUpperCase().includes('NAMA KENDARAAN')));
+            if (headerIdx === -1) headerIdx = 0;
+
+            const html = rows.map((row, rIdx) => {
+                if (row.every(c => String(c).trim() === '')) return '';
+
+                const isTitle = rIdx < headerIdx;
+                const isHeader = rIdx === headerIdx;
+                const isHariKerja = row.some(c => String(c).toUpperCase().includes('HARI KERJA'));
+                const isTotalRow = row.some(c => ['TOTAL', 'JUMLAH', 'RATA-RATA'].includes(String(c).trim().toUpperCase()));
+
+                if (q && rIdx > headerIdx && !isHariKerja && !isTotalRow) {
+                    if (!row.join(' ').toLowerCase().includes(q)) return '';
+                }
+
+                let rowCls = 'hover:bg-slate-50';
+                if (isTitle) rowCls = 'bg-slate-100 font-extrabold text-[#0B2545] text-xs';
+                else if (isHeader) rowCls = 'bg-[#0B2545] text-white font-bold uppercase text-[10px]';
+                else if (isHariKerja) rowCls = 'bg-amber-50 font-extrabold text-amber-900 border-y-2 border-amber-200';
+                else if (isTotalRow) rowCls = 'bg-emerald-50 font-extrabold text-emerald-900 border-t-2 border-emerald-200';
+
+                const cells = row.map((val, cIdx) => {
+                    const strVal = String(val ?? '');
+                    const isSticky = cIdx === 1;
+                    const stickyBg = isHeader ? 'bg-[#0B2545]' : (isTitle ? 'bg-slate-100' : (isHariKerja ? 'bg-amber-50' : (isTotalRow ? 'bg-emerald-50' : 'bg-white')));
+                    const stickyCls = isSticky ? `sticky left-0 ${stickyBg} z-10 min-w-[190px] font-bold` : '';
+                    const alignCls = cIdx === 1 ? 'text-left' : 'text-center';
+
+                    const canInput = isEditableSheet && window.isAdminUser && rIdx > headerIdx && !isHariKerja && !isTotalRow && cIdx >= 2 && cIdx <= 13;
+                    if (canInput) {
+                        return `
+                            <td class="p-1.5 ${alignCls} ${stickyCls} border-r border-slate-100">
+                                <input type="number" step="any" value="${escapeHtml(strVal)}"
+                                    oninput="queueCellUpdate(${rIdx + 1}, ${cIdx + 1}, this.value, this)"
+                                    class="w-14 text-center border border-slate-300 rounded-lg px-1 py-1 text-[11px] font-bold bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </td>
+                        `;
+                    }
+
+                    const isPct = !isHeader && strVal.includes('%');
+                    const content = isPct
+                        ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">${escapeHtml(strVal)}</span>`
+                        : escapeHtml(strVal);
+
+                    return `<td class="p-2.5 ${alignCls} ${stickyCls} whitespace-nowrap border-r border-slate-100/80">${content}</td>`;
+                }).join('');
+
+                return `<tr class="${rowCls}">${cells}</tr>`;
+            }).join('');
+
+            tbody.innerHTML = html;
+        }
+
+        function queueCellUpdate(rowNum, colNum, rawVal, inputEl) {
+            const parsed = rawVal === '' ? '' : Number(rawVal);
+            pendingUpdates.set(`${rowNum}_${colNum}`, {
+                row: rowNum,
+                col: colNum,
+                value: isNaN(parsed) ? rawVal : parsed
+            });
+            inputEl.classList.add('border-amber-500', 'bg-amber-50');
+        }
+
+        async function saveBatchBulan() {
+            if (!window.isAdminUser) return;
+            if (pendingUpdates.size === 0) {
+                return showToast('Tidak ada perubahan angka di Sheet BULAN yang perlu disimpan.');
+            }
+
+            const btn = document.getElementById('btnSaveBatch');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan & Menghitung Ulang...';
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_batch',
+                        updates: Array.from(pendingUpdates.values())
+                    })
+                });
+
+                setTimeout(async () => {
+                    await loadUtilitas();
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Sheet KENDARAAN';
+                    showToast('Berhasil! Sheet BULAN & Sheet KENDARAAN telah diperbarui otomatis.');
+                    switchTab('kendaraan');
+                }, 1500);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Sheet KENDARAAN';
+                showToast('Gagal menyimpan ke Spreadsheet: ' + err.message, true);
+            }
+        }
+
+        function exportCurrentExcel() {
+            const tableId = currentTab === 'kendaraan' ? 'tableKendaraan' : 'tableBulan';
+            const html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+                <head><meta charset="UTF-8"></head>
+                <body>
+                    <h3>DATA ${currentTab.toUpperCase()} - POLTEKBANG SURABAYA</h3>
+                    ${document.getElementById(tableId).outerHTML}
+                </body></html>
+            `;
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Sheet_${currentTab.toUpperCase()}_Poltekbang_${new Date().toISOString().slice(0, 10)}.xls`;
+            link.click();
+            showToast('File Excel berhasil diunduh!');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUtilitas);
+    </script>
+</body>
+</html>

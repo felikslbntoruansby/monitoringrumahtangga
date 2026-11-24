@@ -11,9 +11,14 @@
       refreshFn: 'loadData()'
     },
     'kendaraan.html': {
-      title: '2. Peminjaman Kendaraan',
-      subtitle: 'Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan driver.',
+      title: '2. Peminjaman Kendaraan Dinas',
+      subtitle: 'Pengajuan kendaraan dinas operasional, jadwal keberangkatan, dan penugasan driver.',
       refreshFn: 'loadData()'
+    },
+    'utilitas-kendaraan.html': {
+      title: '2B. Utilitas Kendaraan Dinas (Khusus Admin)',
+      subtitle: 'Rekap kapasitas, frekuensi, hari pemakaian bulanan (Sheet BULAN), dan persentase utilisasi armada (Sheet KENDARAAN).',
+      refreshFn: 'loadUtilitas()'
     },
     'inventaris.html': {
       title: '3. Inventaris Barang & Stok Opname',
@@ -32,21 +37,25 @@
     }
   };
 
-  const NAV_ITEMS = [
-    { href: 'index.html', label: 'Ringkasan Dashboard', icon: 'fa-chart-pie', iconColor: 'text-amber-300' },
-    { href: 'ruangan.html', label: '1. Peminjaman Ruangan', icon: 'fa-door-open', iconColor: 'text-sky-400' },
-    { href: 'kendaraan.html', label: '2. Peminjaman Kendaraan', icon: 'fa-car-side', iconColor: 'text-emerald-400' },
-    { href: 'inventaris.html', label: '3. Inventaris Barang', icon: 'fa-boxes-stacked', iconColor: 'text-amber-400', teknisiOnly: true },
-    { href: 'ac.html', label: '4. Data & QR Unit AC', icon: 'fa-snowflake', iconColor: 'text-cyan-400' },
-    { href: 'apar.html', label: '5. Data & QR APAR', icon: 'fa-fire-extinguisher', iconColor: 'text-rose-400' }
-  ];
-
   window.toggleAppSidebar = function(show) {
     const sbEl = document.getElementById('appSidebar');
     const bdEl = document.getElementById('appSidebarBackdrop');
     if (sbEl) sbEl.classList.toggle('-translate-x-full', !show);
     if (bdEl) bdEl.classList.toggle('hidden', !show);
   };
+
+  function navLink(href, label, icon, iconColor, currentFile, extraCls = '') {
+    const isActive = href === currentFile;
+    const activeCls = isActive
+      ? 'bg-[#14532D] text-white font-bold border-l-4 border-amber-400 shadow-sm'
+      : 'text-slate-300 font-semibold hover:bg-white/10 hover:text-white';
+    return `
+      <a href="${href}" class="${extraCls} w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition ${activeCls}">
+        <i class="fa-solid ${icon} w-4 text-center ${isActive ? 'text-amber-300' : iconColor}"></i>
+        <span>${label}</span>
+      </a>
+    `;
+  }
 
   function initLayout() {
     const shell = document.getElementById('appShell');
@@ -55,20 +64,25 @@
     const currentFile = (shell.dataset.page || window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
     const meta = PAGE_META[currentFile] || PAGE_META['index.html'];
 
-    const navHtml = NAV_ITEMS.map(item => {
-      const isActive = item.href === currentFile;
-      const activeCls = isActive
-        ? 'bg-[#14532D] text-white font-bold border-l-4 border-amber-400 shadow-sm'
-        : 'text-slate-300 font-semibold hover:bg-white/10 hover:text-white';
-      const roleCls = item.teknisiOnly ? 'teknisi-only' : '';
+    const navHtml = `
+      ${navLink('index.html', 'Ringkasan Dashboard', 'fa-chart-pie', 'text-amber-300', currentFile)}
+      ${navLink('ruangan.html', '1. Peminjaman Ruangan', 'fa-door-open', 'text-sky-400', currentFile)}
 
-      return `
-        <a href="${item.href}" class="${roleCls} w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs transition ${activeCls}">
-          <i class="fa-solid ${item.icon} w-4 text-center ${isActive ? 'text-amber-300' : item.iconColor}"></i>
-          <span>${item.label}</span>
-        </a>
-      `;
-    }).join('');
+      <!-- GRUP MENU KHUSUS KENDARAAN (2 FILE TERPISAH) -->
+      <div class="pt-2 pb-1">
+        <div class="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-300/90 flex items-center gap-1.5">
+          <i class="fa-solid fa-car-side"></i> 2. Modul Kendaraan
+        </div>
+        <div class="mt-1 space-y-1 pl-2 border-l border-white/15 ml-2.5">
+          ${navLink('kendaraan.html', 'Peminjaman Kendaraan', 'fa-calendar-check', 'text-emerald-400', currentFile)}
+          ${navLink('utilitas-kendaraan.html', 'Utilitas Kendaraan', 'fa-gauge-high', 'text-teal-300', currentFile, 'admin-only')}
+        </div>
+      </div>
+
+      ${navLink('inventaris.html', '3. Inventaris Barang', 'fa-boxes-stacked', 'text-amber-400', currentFile, 'teknisi-only')}
+      ${navLink('ac.html', '4. Data & QR Unit AC', 'fa-snowflake', 'text-cyan-400', currentFile)}
+      ${navLink('apar.html', '5. Data & QR APAR', 'fa-fire-extinguisher', 'text-rose-400', currentFile)}
+    `;
 
     shell.innerHTML = `
       <!-- MOBILE TOPBAR -->
@@ -168,8 +182,9 @@
       if (c) c.innerText = new Date().toLocaleTimeString('id-ID');
     }, 1000);
 
-    if (typeof applyRoleUI === 'function' && typeof userRole !== 'undefined') {
-      applyRoleUI(userRole);
+    const activeRole = sessionStorage.getItem('rt_poltekbang_role_cache') || (typeof userRole !== 'undefined' ? userRole : 'VIEWER');
+    if (typeof applyRoleUI === 'function') {
+      applyRoleUI(activeRole);
     }
   }
 

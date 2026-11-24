@@ -4,15 +4,19 @@ const ROLE_CACHE_KEY = 'rt_poltekbang_role_cache';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const VIEWER_BLOCKED_PAGES = ['inventaris.html'];
+const ADMIN_ONLY_PAGES = ['utilitas-kendaraan.html'];
 
 let currentUser = null;
 let userRole = 'VIEWER';
 window.isAdminUser = false;
 window.isTeknisiUser = false;
 
-// Cek halaman yang diblokir untuk VIEWER sebelum path diubah ke '/'
+// Cek halaman yang diblokir sebelum path diubah ke '/'
 const _rawPath = window.location.pathname.split('/').pop().toLowerCase();
 const _isBlockedPageForViewer = VIEWER_BLOCKED_PAGES.some(
+  p => _rawPath === p || _rawPath === p.replace('.html', '')
+);
+const _isAdminOnlyPage = ADMIN_ONLY_PAGES.some(
   p => _rawPath === p || _rawPath === p.replace('.html', '')
 );
 
@@ -44,10 +48,13 @@ function setRoleFlags(role) {
 }
 
 function applyRoleUI(role) {
-  if (role !== 'ADMIN') {
+  const upperRole = (role || 'VIEWER').toUpperCase();
+  setRoleFlags(upperRole);
+
+  if (upperRole !== 'ADMIN') {
     document.querySelectorAll('.admin-only').forEach(el => el.remove());
   }
-  if (role === 'VIEWER') {
+  if (upperRole === 'VIEWER') {
     document.querySelectorAll('.teknisi-only').forEach(el => el.remove());
   }
 
@@ -55,24 +62,26 @@ function applyRoleUI(role) {
   if (userBadge) {
     let badgeStyle = 'bg-white/15 text-white border border-white/25';
     let icon = 'fa-user';
-    if (role === 'ADMIN') {
+    if (upperRole === 'ADMIN') {
       badgeStyle = 'bg-amber-500/20 text-amber-300 border border-amber-400/40';
       icon = 'fa-shield-halved';
-    } else if (role === 'TEKNISI') {
+    } else if (upperRole === 'TEKNISI') {
       badgeStyle = 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
       icon = 'fa-screwdriver-wrench';
     }
 
     userBadge.innerHTML = `
       <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${badgeStyle}">
-        <i class="fa-solid ${icon} mr-1"></i> ${escapeHtml(role)}
+        <i class="fa-solid ${icon} mr-1"></i> ${escapeHtml(upperRole)}
       </span>
     `;
   }
 }
 
 function isPageBlockedForRole(role) {
-  return role === 'VIEWER' && _isBlockedPageForViewer;
+  if (_isAdminOnlyPage && role !== 'ADMIN') return true;
+  if (_isBlockedPageForViewer && role === 'VIEWER') return true;
+  return false;
 }
 
 const cachedRole = sessionStorage.getItem(ROLE_CACHE_KEY);
@@ -105,18 +114,15 @@ if (cachedRole) {
   sessionStorage.setItem(ROLE_CACHE_KEY, verifiedRole);
 
   if (isPageBlockedForRole(verifiedRole)) {
-    alert('Akses ditolak! Halaman Inventaris hanya dapat diakses oleh Admin dan Teknisi.');
     window.location.replace('index.html');
     return;
   }
 
-  if (!cachedRole) {
-    document.documentElement.style.visibility = 'visible';
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => applyRoleUI(verifiedRole));
-    } else {
-      applyRoleUI(verifiedRole);
-    }
+  document.documentElement.style.visibility = 'visible';
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => applyRoleUI(verifiedRole));
+  } else {
+    applyRoleUI(verifiedRole);
   }
 })();
 
