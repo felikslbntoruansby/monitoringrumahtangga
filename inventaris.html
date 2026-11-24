@@ -22,6 +22,50 @@
 
     <div id="pageHeader"></div>
 
+    <!-- PANEL SINKRONISASI GOOGLE SPREADSHEET & PILIH KATEGORI -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-extrabold text-[#0B2545]">Sinkronisasi Google Spreadsheet (STOCK BARANG)</span>
+            <span id="syncBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Menghubungkan...</span>
+          </div>
+          <p id="syncDesc" class="text-[11px] text-slate-500 mt-0.5">
+            Setiap pengambilan barang &amp; stok masuk otomatis tercatat ke Google Spreadsheet.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- PILIH SHEET / KATEGORI -->
+        <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          <label for="selectSheet" class="text-[11px] font-extrabold text-[#0B2545]">Kategori:</label>
+          <select id="selectSheet" onchange="onSheetChange(this.value)"
+            class="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-extrabold text-[#14532D] focus:outline-none">
+            <option value="LAPORAN STOK BARANG">LAPORAN STOK BARANG</option>
+            <option value="LAPORAN STOK PERALATAN KERJA">LAPORAN STOK PERALATAN KERJA</option>
+          </select>
+        </div>
+
+        <a href="https://docs.google.com/spreadsheets/d/11hA25oHnq1Oga8a7h9E0Y5uURXKWuwvxxXWlt7w2c7g/edit?gid=1829345084#gid=1829345084" target="_blank"
+           class="admin-only px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-up-right-from-square"></i> Spreadsheet
+        </a>
+
+        <button onclick="prosesClosingStock()" id="btnClosingStock"
+          class="admin-only px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-lock"></i> Closing Stock
+        </button>
+
+        <button onclick="loadData(true)" class="px-3.5 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+    </div>
+
     <!-- KPI SINGKAT -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-[#0B2545] shadow-2xs">
@@ -29,7 +73,7 @@
         <div id="kpi-jenis" class="text-2xl font-extrabold text-[#0B2545] mt-1">0</div>
       </div>
       <div class="bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-[#14532D] shadow-2xs">
-        <span class="text-[11px] font-bold uppercase text-emerald-600">Total Stok Tersedia</span>
+        <span class="text-[11px] font-bold uppercase text-emerald-600">Total Stok Akhir Tersedia</span>
         <div id="kpi-stok" class="text-2xl font-extrabold text-emerald-600 mt-1">0</div>
       </div>
       <div class="bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-rose-600 shadow-2xs">
@@ -38,46 +82,46 @@
       </div>
     </div>
 
-    <!-- 2 MENU TERPISAH (NAVIGASI MENU) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- NAVIGASI 2 MENU (KHUSUS ADMIN MELIHAT KEDUANYA, TEKNISI HANYA MELIHAT PENGAMBILAN BARANG) -->
+    <div class="admin-only grid grid-cols-1 md:grid-cols-2 gap-4">
       <button onclick="switchMenu('ambil')" id="btnMenuAmbil"
         class="p-4 rounded-xl border-2 border-amber-500 bg-amber-50/70 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer">
         <div class="w-12 h-12 rounded-xl bg-amber-600 text-white flex items-center justify-center text-xl shrink-0">
           <i class="fa-solid fa-dolly"></i>
         </div>
         <div>
-          <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Menu 1 • Teknisi & Admin</span>
-          <h2 class="text-base font-extrabold text-slate-900">Pengambilan Barang & Stok Opname</h2>
-          <p class="text-xs text-slate-600 mt-0.5">Lihat stok gudang saat ini dan catat pengambilan barang keluar.</p>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Menu 1 • Teknisi &amp; Admin</span>
+          <h2 class="text-base font-extrabold text-slate-900">Pengambilan Barang &amp; Stok Opname</h2>
+          <p class="text-xs text-slate-600 mt-0.5">Lihat stok gudang real-time dan catat pengambilan barang keluar.</p>
         </div>
       </button>
 
       <button onclick="switchMenu('admin')" id="btnMenuAdmin"
-        class="admin-only p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer">
+        class="p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer">
         <div class="w-12 h-12 rounded-xl bg-[#14532D] text-white flex items-center justify-center text-xl shrink-0">
           <i class="fa-solid fa-boxes-packing"></i>
         </div>
         <div>
           <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">Menu 2 • Khusus Admin</span>
-          <h2 class="text-base font-extrabold text-slate-900">Tambah Master Barang & Stok Masuk</h2>
-          <p class="text-xs text-slate-600 mt-0.5">Tambah jenis barang baru, input stok masuk, edit, atau hapus data.</p>
+          <h2 class="text-base font-extrabold text-slate-900">Tambah Master Barang &amp; Stok Masuk</h2>
+          <p class="text-xs text-slate-600 mt-0.5">Tambah jenis barang baru atau catat penambahan stok masuk ke Spreadsheet.</p>
         </div>
       </button>
     </div>
 
-    <!-- PANEL 1: FORM PENGAMBILAN BARANG -->
+    <!-- PANEL 1: FORM PENGAMBILAN BARANG (TEKNISI & ADMIN) -->
     <div id="panelAmbil" class="bg-white rounded-xl border border-amber-200 p-5 shadow-2xs space-y-4">
       <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
         <div>
           <h3 class="text-sm font-extrabold text-slate-900"><i class="fa-solid fa-arrow-right-from-bracket text-amber-600 mr-1.5"></i> Form Pengambilan Barang (Stok Keluar)</h3>
-          <p class="text-xs text-slate-500">Pilih barang yang diambil dari gudang beserta nama petugas pengambil.</p>
+          <p class="text-xs text-slate-500">Otomatis tercatat ke kolom <b>BARANG KELUAR</b> pada sheet <span class="font-bold active-sheet-label">LAPORAN STOK BARANG</span>.</p>
         </div>
       </div>
 
       <form onsubmit="submitAmbilBarang(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
         <div class="md:col-span-4">
           <label class="block font-bold text-slate-600 mb-1">Pilih Barang *</label>
-          <select id="ambilItemId" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
+          <select id="ambilItemName" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
         </div>
         <div class="md:col-span-2">
           <label class="block font-bold text-slate-600 mb-1">Jumlah Ambil *</label>
@@ -85,31 +129,31 @@
         </div>
         <div class="md:col-span-3">
           <label class="block font-bold text-slate-600 mb-1">Nama Pengambil / Teknisi *</label>
-          <input type="text" id="ambilPic" required placeholder="Nama teknisi..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+          <input type="text" id="ambilPic" required placeholder="Contoh: Suyatno / Erfan" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
         </div>
         <div class="md:col-span-3">
           <label class="block font-bold text-slate-600 mb-1">Keperluan / Lokasi Pemasangan *</label>
-          <input type="text" id="ambilNotes" required placeholder="Contoh: Ganti kapasitor AC G. Umum" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+          <input type="text" id="ambilNotes" required placeholder="Contoh: Asrama H2 kmr 103" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
         </div>
         <div class="md:col-span-12 flex justify-end">
-          <button type="submit" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
+          <button type="submit" id="btnSubmitAmbil" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
             <i class="fa-solid fa-check mr-1"></i> Catat Pengambilan Barang
           </button>
         </div>
       </form>
     </div>
 
-    <!-- PANEL 2: ADMIN STOK MASUK & BARANG BARU -->
+    <!-- PANEL 2: KHUSUS ADMIN (STOK MASUK & BARANG BARU) -->
     <div id="panelAdmin" class="admin-only hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="bg-white rounded-xl border border-emerald-200 p-5 shadow-2xs space-y-4">
         <div class="border-b border-slate-100 pb-3">
           <h3 class="text-sm font-extrabold text-emerald-800"><i class="fa-solid fa-plus-circle mr-1.5"></i> Tambah Stok Masuk (Barang Terdaftar)</h3>
-          <p class="text-xs text-slate-500">Menambah jumlah stok barang yang sudah ada di daftar inventaris.</p>
+          <p class="text-xs text-slate-500">Otomatis tercatat ke kolom <b>BARANG MASUK</b> di Google Spreadsheet.</p>
         </div>
         <form onsubmit="submitStokMasuk(event)" class="space-y-3 text-xs">
           <div>
             <label class="block font-bold text-slate-600 mb-1">Pilih Barang *</label>
-            <select id="masukItemId" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
+            <select id="masukItemName" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 font-semibold"></select>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -117,16 +161,12 @@
               <input type="number" id="masukQty" min="1" value="1" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
             </div>
             <div>
-              <label class="block font-bold text-slate-600 mb-1">Petugas Penerima *</label>
-              <input type="text" id="masukPic" required placeholder="Nama Admin..." class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+              <label class="block font-bold text-slate-600 mb-1">Satuan / Catatan *</label>
+              <input type="text" id="masukNotes" required placeholder="Contoh: pcs / Pengadaan rutin" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
             </div>
           </div>
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">Keterangan Pengadaan</label>
-            <input type="text" id="masukNotes" placeholder="Contoh: Pengadaan rutin bulan ini" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-          </div>
-          <button type="submit" class="w-full py-2.5 bg-[#14532D] hover:bg-emerald-800 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
-            <i class="fa-solid fa-boxes-stacked mr-1"></i> Simpan Stok Masuk
+          <button type="submit" id="btnSubmitMasuk" class="w-full py-2.5 bg-[#14532D] hover:bg-emerald-800 text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
+            <i class="fa-solid fa-boxes-stacked mr-1"></i> Simpan Stok Masuk ke Spreadsheet
           </button>
         </form>
       </div>
@@ -134,35 +174,25 @@
       <div class="bg-white rounded-xl border border-sky-200 p-5 shadow-2xs space-y-4">
         <div class="border-b border-slate-100 pb-3">
           <h3 class="text-sm font-extrabold text-sky-800"><i class="fa-solid fa-folder-plus mr-1.5"></i> Daftarkan Jenis Barang Baru</h3>
-          <p class="text-xs text-slate-500">Tambahkan item barang baru yang belum terdaftar di tabel opname.</p>
+          <p class="text-xs text-slate-500">Menambahkan item baru ke tabel <b>LAPORAN STOK</b> beserta rumus otomatisnya.</p>
         </div>
         <form onsubmit="submitBarangBaru(event)" class="space-y-3 text-xs">
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-bold text-slate-600 mb-1">Kode Barang *</label>
-              <input type="text" id="newCode" required placeholder="Contoh: BRG-015" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-600 mb-1">Satuan *</label>
-              <input type="text" id="newUnit" required value="Pcs" placeholder="Pcs / Unit / Box" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-            </div>
-          </div>
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">Nama Barang *</label>
-            <input type="text" id="newName" required placeholder="Contoh: Freon R32 Tabung 3Kg" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-slate-600 mb-1">Lokasi Penyimpanan *</label>
-              <input type="text" id="newLocation" required placeholder="Gudang Rumah Tangga" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+              <input type="text" id="newCode" required placeholder="Contoh: A135" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
             </div>
             <div>
               <label class="block font-bold text-slate-600 mb-1">Stok Awal *</label>
               <input type="number" id="newInitial" min="0" value="0" required class="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-bold">
             </div>
           </div>
-          <button type="submit" class="w-full py-2.5 bg-[#0B2545] hover:bg-[#133863] text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
-            <i class="fa-solid fa-save mr-1"></i> Simpan Barang Baru
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Nama Barang *</label>
+            <input type="text" id="newName" required placeholder="Contoh: Pipa PVC 1 Inch" class="w-full border border-slate-300 rounded-xl px-3 py-2.5">
+          </div>
+          <button type="submit" id="btnSubmitBaru" class="w-full py-2.5 bg-[#0B2545] hover:bg-[#133863] text-white font-bold rounded-xl shadow-sm transition cursor-pointer">
+            <i class="fa-solid fa-save mr-1"></i> Simpan Master Barang Baru
           </button>
         </form>
       </div>
@@ -172,107 +202,79 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
       <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
         <div>
-          <h3 class="font-extrabold text-sm text-[#0B2545]">Daftar Stok Opname Barang</h3>
-          <p class="text-[11px] text-slate-500">Data stok real-time tersedia untuk Teknisi dan Admin.</p>
+          <h3 class="font-extrabold text-sm text-[#0B2545]">Daftar Stok Opname (<span class="active-sheet-label">LAPORAN STOK BARANG</span>)</h3>
+          <p class="text-[11px] text-slate-500">Data stok langsung dari Google Spreadsheet.</p>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto">
-          <input type="search" id="searchBox" oninput="renderTable()" placeholder="Cari kode, nama barang, lokasi..." class="w-full sm:w-72 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
+          <input type="search" id="searchBox" oninput="renderTable()" placeholder="Cari kode atau nama barang..." class="w-full sm:w-72 border border-slate-300 rounded-xl px-3.5 py-2 text-xs">
         </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
             <tr>
-              <th class="p-3.5">Kode</th>
+              <th class="p-3.5">Kode Barang</th>
               <th class="p-3.5">Nama Barang</th>
-              <th class="p-3.5">Lokasi Penempatan</th>
-              <th class="p-3.5 text-center">Awal</th>
-              <th class="p-3.5 text-center text-emerald-600">Masuk</th>
-              <th class="p-3.5 text-center text-rose-600">Keluar</th>
+              <th class="p-3.5 text-center">Stok Awal</th>
+              <th class="p-3.5 text-center text-emerald-600">Barang Masuk</th>
+              <th class="p-3.5 text-center text-rose-600">Barang Keluar</th>
               <th class="p-3.5 text-center">Stok Akhir</th>
               <th class="p-3.5">Status</th>
-              <th class="admin-only p-3.5 text-center">Aksi Admin</th>
             </tr>
           </thead>
-          <tbody id="tbody" class="divide-y divide-slate-100"></tbody>
+          <tbody id="tbody" class="divide-y divide-slate-100">
+            <tr><td colspan="7" class="p-8 text-center text-slate-400">Memuat data stok dari Spreadsheet...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
 
     <!-- RIWAYAT PENGAMBILAN & MUTASI BARANG -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-      <div class="p-4 border-b border-slate-200">
-        <h3 class="font-extrabold text-sm text-[#0B2545]"><i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1.5"></i> Riwayat Pengambilan & Mutasi Barang</h3>
+      <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+        <h3 class="font-extrabold text-sm text-[#0B2545]"><i class="fa-solid fa-clock-rotate-left text-amber-600 mr-1.5"></i> Riwayat Barang Masuk &amp; Pengambilan Barang</h3>
+        <div class="flex gap-1.5 text-xs">
+          <button onclick="setLogFilter('ALL')" id="logBtn-ALL" class="px-3 py-1 rounded-lg bg-[#0B2545] text-white font-bold cursor-pointer">Semua</button>
+          <button onclick="setLogFilter('OUT')" id="logBtn-OUT" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold cursor-pointer">Barang Keluar</button>
+          <button onclick="setLogFilter('IN')" id="logBtn-IN" class="px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold cursor-pointer">Barang Masuk</button>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] border-b border-slate-200">
             <tr>
-              <th class="p-3.5">Waktu</th>
+              <th class="p-3.5">Tanggal</th>
               <th class="p-3.5">Jenis</th>
-              <th class="p-3.5">Barang</th>
+              <th class="p-3.5">Nama Barang</th>
               <th class="p-3.5 text-center">Jumlah</th>
-              <th class="p-3.5">Petugas / Teknisi</th>
-              <th class="p-3.5">Keperluan / Catatan</th>
-              <th class="admin-only p-3.5 text-center">Hapus</th>
+              <th class="p-3.5">User / Teknisi</th>
+              <th class="p-3.5">Catatan / Keperluan</th>
             </tr>
           </thead>
-          <tbody id="logBody" class="divide-y divide-slate-100"></tbody>
+          <tbody id="logBody" class="divide-y divide-slate-100">
+            <tr><td colspan="6" class="p-8 text-center text-slate-400">Memuat riwayat mutasi barang...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </main>
 
-  <!-- MODAL EDIT BARANG -->
-  <div id="editModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-base text-slate-800">Edit Master Barang (Admin)</h3>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
-      </div>
-      <form onsubmit="saveEditItem(event)" class="space-y-3 text-xs">
-        <input type="hidden" id="editId">
-        <div>
-          <label class="block font-bold text-slate-600 mb-1">Kode Barang</label>
-          <input type="text" id="editCode" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-600 mb-1">Nama Barang</label>
-          <input type="text" id="editName" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-600 mb-1">Lokasi Penempatan</label>
-          <input type="text" id="editLocation" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">Satuan</label>
-            <input type="text" id="editUnit" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-600 mb-1">Stok Awal</label>
-            <input type="number" id="editInitial" required class="w-full border border-slate-300 rounded-xl px-3 py-2">
-          </div>
-        </div>
-        <button type="submit" class="w-full py-2.5 bg-[#0B2545] hover:bg-[#133863] text-white font-bold rounded-xl cursor-pointer">
-          Simpan Perubahan
-        </button>
-      </form>
-    </div>
-  </div>
-
   <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
   <script>
+    const INVENTORY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsjMVGpnBxT8TQj_b3I-tKaGNLNex3_iFbP3-bvkO7rM18lnOjQLFJ1YBKR05rHfqR/exec';
+
+    let activeSheet = 'LAPORAN STOK BARANG';
     let items = [];
-    let logs = [];
+    let combinedLogs = [];
+    let logFilter = 'ALL';
 
     function showToast(msg, isErr = false) {
       const el = document.createElement('div');
       el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
       el.innerText = msg;
       document.getElementById('toast').appendChild(el);
-      setTimeout(() => el.remove(), 4000);
+      setTimeout(() => el.remove(), 4500);
     }
 
     function switchMenu(menu) {
@@ -284,254 +286,316 @@
       if (menu === 'admin' && window.isAdminUser) {
         panelAmbil.classList.add('hidden');
         if (panelAdmin) panelAdmin.classList.remove('hidden');
-        btnAmbil.className = 'p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-amber-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
-        if (btnAdmin) btnAdmin.className = 'admin-only p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
+        if (btnAmbil) btnAmbil.className = 'p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-amber-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
+        if (btnAdmin) btnAdmin.className = 'p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
       } else {
         panelAmbil.classList.remove('hidden');
         if (panelAdmin) panelAdmin.classList.add('hidden');
-        btnAmbil.className = 'p-4 rounded-xl border-2 border-amber-500 bg-amber-50/70 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
-        if (btnAdmin) btnAdmin.className = 'admin-only p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
+        if (btnAmbil) btnAmbil.className = 'p-4 rounded-xl border-2 border-amber-500 bg-amber-50/70 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
+        if (btnAdmin) btnAdmin.className = 'p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-left transition flex items-center gap-4 shadow-2xs cursor-pointer';
       }
     }
 
-    async function loadData(notify = false) {
-      const [invRes, logRes] = await Promise.all([
-        sb.from('inventory').select('*').order('id', { ascending: true }),
-        sb.from('logs').select('*, inventory(code, name)').order('created_at', { ascending: false }).limit(50)
-      ]);
-
-      if (invRes.error) return showToast('Gagal memuat inventaris: ' + invRes.error.message, true);
-      items = invRes.data || [];
-      logs = logRes.data || [];
-
-      let totalStok = 0, habisCount = 0;
-      items.forEach(x => {
-        const s = Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0);
-        totalStok += s;
-        if (s <= 0) habisCount++;
+    function onSheetChange(newSheet) {
+      activeSheet = newSheet;
+      document.querySelectorAll('.active-sheet-label').forEach(el => {
+        el.innerText = activeSheet;
       });
+      loadData(false);
+    }
 
-      document.getElementById('kpi-jenis').innerText = items.length;
-      document.getElementById('kpi-stok').innerText = totalStok;
-      document.getElementById('kpi-habis').innerText = habisCount;
+    async function loadData(notify = false) {
+      const activeRole = (sessionStorage.getItem('rt_poltekbang_role_cache') || '').toUpperCase();
+      if (activeRole === 'VIEWER') {
+        window.location.replace('index.html');
+        return;
+      }
 
-      populateDropdowns();
-      renderTable();
-      renderLogs();
-      if (notify) showToast('Data inventaris diperbarui!');
+      const badge = document.getElementById('syncBadge');
+      const desc = document.getElementById('syncDesc');
+      badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
+      badge.innerText = 'Menyinkronkan...';
+
+      try {
+        const res = await fetch(`${INVENTORY_SCRIPT_URL}?sheet=${encodeURIComponent(activeSheet)}&t=${Date.now()}`);
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Gagal membaca data spreadsheet');
+
+        items = json.stok || [];
+        const masukList = (json.barang_masuk || []).map(m => ({
+          type: 'IN',
+          row: m.row,
+          tgl: m.tgl,
+          nama: m.nama,
+          jumlah: m.jumlah,
+          user: 'Admin Gudang',
+          catatan: m.catatan || '-'
+        }));
+        const keluarList = (json.barang_keluar || []).map(k => ({
+          type: 'OUT',
+          row: k.row,
+          tgl: k.tgl,
+          nama: k.nama,
+          jumlah: k.jumlah,
+          user: k.user || '-',
+          catatan: k.catatan || '-'
+        }));
+
+        combinedLogs = [...keluarList.reverse(), ...masukList.reverse()];
+
+        let totalStok = 0;
+        let habisCount = 0;
+        items.forEach(x => {
+          const s = Number(x.stok_akhir) || 0;
+          totalStok += s;
+          if (s <= 0) habisCount++;
+        });
+
+        document.getElementById('kpi-jenis').innerText = items.length;
+        document.getElementById('kpi-stok').innerText = totalStok;
+        document.getElementById('kpi-habis').innerText = habisCount;
+
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800';
+        badge.innerText = 'Tersinkronisasi';
+        desc.innerText = `Terhubung pukul ${new Date().toLocaleTimeString('id-ID')} • Sheet aktif: ${activeSheet}`;
+
+        populateDropdowns();
+        renderTable();
+        renderLogs();
+        if (notify) showToast('Data inventaris berhasil disinkronkan dari Google Spreadsheet!');
+      } catch (err) {
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700';
+        badge.innerText = 'Gagal Koneksi';
+        desc.innerText = err.message;
+        showToast('Gagal memuat Spreadsheet: ' + err.message, true);
+      }
     }
 
     function populateDropdowns() {
       const optionsHtml = items.map(r => {
-        const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
-        return `<option value="${Number(r.id)}">${escapeHtml(r.code || '')} - ${escapeHtml(r.name)} (Sisa Stok: ${stok} ${escapeHtml(r.unit || 'Unit')})</option>`;
+        const stok = Number(r.stok_akhir) || 0;
+        return `<option value="${escapeHtml(r.nama)}">${escapeHtml(r.kode || '')} - ${escapeHtml(r.nama)} (Sisa Stok: ${stok})</option>`;
       }).join('');
 
-      const ambilSel = document.getElementById('ambilItemId');
-      const masukSel = document.getElementById('masukItemId');
+      const ambilSel = document.getElementById('ambilItemName');
+      const masukSel = document.getElementById('masukItemName');
       if (ambilSel) ambilSel.innerHTML = optionsHtml || '<option value="">Belum ada barang</option>';
       if (masukSel) masukSel.innerHTML = optionsHtml || '<option value="">Belum ada barang</option>';
     }
 
     async function submitAmbilBarang(e) {
       e.preventDefault();
-      const id = parseInt(document.getElementById('ambilItemId').value, 10);
+      if (!window.isTeknisiUser) return showToast('Akses ditolak: Anda tidak memiliki izin pengambilan barang.', true);
+
+      const namaBarang = document.getElementById('ambilItemName').value;
       const qty = parseInt(document.getElementById('ambilQty').value, 10);
       const pic = document.getElementById('ambilPic').value.trim();
       const notes = document.getElementById('ambilNotes').value.trim();
 
-      if (!id) return showToast('Pilih barang terlebih dahulu!', true);
+      if (!namaBarang) return showToast('Pilih barang terlebih dahulu!', true);
 
-      const { error } = await sb.rpc('ambil_barang_aman', {
-        p_item_id: id,
-        p_qty: qty,
-        p_pic: pic,
-        p_notes: notes
-      });
+      const itemObj = items.find(x => x.nama === namaBarang);
+      if (itemObj && qty > Number(itemObj.stok_akhir)) {
+        return showToast(`Stok tidak mencukupi! Sisa stok "${namaBarang}" hanya ${itemObj.stok_akhir}.`, true);
+      }
 
-      if (error) return showToast(error.message, true);
+      const btn = document.getElementById('btnSubmitAmbil');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan ke Spreadsheet...`;
 
-      document.getElementById('ambilQty').value = 1;
-      document.getElementById('ambilNotes').value = '';
-      showToast('Pengambilan barang berhasil dicatat secara aman!');
-      loadData(false);
+      try {
+        const res = await fetch(INVENTORY_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'add_keluar',
+            sheet: activeSheet,
+            nama: namaBarang,
+            jumlah: qty,
+            catatan: notes,
+            user: pic
+          })
+        });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Gagal mencatat pengambilan');
+
+        document.getElementById('ambilQty').value = 1;
+        document.getElementById('ambilNotes').value = '';
+        showToast(`Pengambilan ${qty} "${namaBarang}" tercatat di Google Spreadsheet!`);
+        await loadData(false);
+      } catch (err) {
+        showToast('Gagal menyimpan: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Catat Pengambilan Barang`;
+      }
     }
 
     async function submitStokMasuk(e) {
       e.preventDefault();
-      if (!window.isAdminUser) return;
+      if (!window.isAdminUser) return showToast('Hanya Admin yang dapat menambah stok masuk.', true);
 
-      const id = document.getElementById('masukItemId').value;
+      const namaBarang = document.getElementById('masukItemName').value;
       const qty = parseInt(document.getElementById('masukQty').value, 10);
-      const pic = document.getElementById('masukPic').value;
-      const notes = document.getElementById('masukNotes').value || 'Penambahan stok masuk';
+      const notes = document.getElementById('masukNotes').value.trim();
 
-      const item = items.find(x => String(x.id) === String(id));
-      if (!item) return;
+      const btn = document.getElementById('btnSubmitMasuk');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan ke Spreadsheet...`;
 
-      const newIn = Number(item.inQty || 0) + qty;
-      const { error: updErr } = await sb.from('inventory').update({ inQty: newIn }).eq('id', id);
-      if (updErr) return showToast('Gagal menambah stok: ' + updErr.message, true);
+      try {
+        const res = await fetch(INVENTORY_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'add_masuk',
+            sheet: activeSheet,
+            nama: namaBarang,
+            jumlah: qty,
+            catatan: notes
+          })
+        });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Gagal menambah stok masuk');
 
-      await sb.from('logs').insert([{
-        inventory_id: id,
-        type: 'IN',
-        quantity: qty,
-        pic_name: pic,
-        notes: notes
-      }]);
-
-      document.getElementById('masukQty').value = 1;
-      document.getElementById('masukNotes').value = '';
-      showToast(`Stok masuk +${qty} ${item.name} berhasil disimpan!`);
-      loadData(false);
+        document.getElementById('masukQty').value = 1;
+        document.getElementById('masukNotes').value = '';
+        showToast(`Stok masuk +${qty} "${namaBarang}" berhasil tersinkronisasi!`);
+        await loadData(false);
+      } catch (err) {
+        showToast('Gagal menyimpan: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-boxes-stacked mr-1"></i> Simpan Stok Masuk ke Spreadsheet`;
+      }
     }
 
     async function submitBarangBaru(e) {
       e.preventDefault();
-      if (!window.isAdminUser) return;
+      if (!window.isAdminUser) return showToast('Hanya Admin yang dapat mendaftarkan barang baru.', true);
 
-      const payload = {
-        code: document.getElementById('newCode').value,
-        name: document.getElementById('newName').value,
-        location: document.getElementById('newLocation').value,
-        unit: document.getElementById('newUnit').value,
-        initial: parseInt(document.getElementById('newInitial').value, 10) || 0,
-        inQty: 0,
-        outQty: 0
-      };
+      const btn = document.getElementById('btnSubmitBaru');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mendaftarkan...`;
 
-      const { error } = await sb.from('inventory').insert([payload]);
-      if (error) return showToast('Gagal menambah barang: ' + error.message, true);
+      try {
+        const res = await fetch(INVENTORY_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'add_master_item',
+            sheet: activeSheet,
+            kode: document.getElementById('newCode').value.trim(),
+            nama: document.getElementById('newName').value.trim(),
+            stok_awal: parseInt(document.getElementById('newInitial').value, 10) || 0
+          })
+        });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Gagal menambah master barang');
 
-      e.target.reset();
-      showToast('Jenis barang baru berhasil ditambahkan!');
-      loadData(false);
+        e.target.reset();
+        showToast('Master barang baru berhasil ditambahkan ke Google Spreadsheet!');
+        await loadData(false);
+      } catch (err) {
+        showToast('Gagal menambah barang: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-save mr-1"></i> Simpan Master Barang Baru`;
+      }
     }
 
-    function openEditModal(id) {
-      if (!window.isAdminUser) return;
-      const item = items.find(x => String(x.id) === String(id));
-      if (!item) return;
+    async function prosesClosingStock() {
+      if (!window.isAdminUser) return showToast('Hanya Admin yang dapat melakukan Closing Stock.', true);
 
-      document.getElementById('editId').value = item.id;
-      document.getElementById('editCode').value = item.code || '';
-      document.getElementById('editName').value = item.name || '';
-      document.getElementById('editLocation').value = item.location || '';
-      document.getElementById('editUnit').value = item.unit || 'Unit';
-      document.getElementById('editInitial').value = item.initial || 0;
+      const ok = confirm(
+        `Lakukan CLOSING STOCK untuk "${activeSheet}" sekarang?\n\n` +
+        `1. Seluruh transaksi periode ini akan diarsipkan menjadi tab baru di Google Spreadsheet.\n` +
+        `2. Stok Akhir akan dipindahkan menjadi Stok Awal periode baru.\n` +
+        `3. Log Barang Masuk & Keluar akan di-reset mulai 0 untuk periode baru.`
+      );
+      if (!ok) return;
 
-      document.getElementById('editModal').classList.remove('hidden');
-      document.getElementById('editModal').classList.add('flex');
-    }
+      const btn = document.getElementById('btnClosingStock');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Closing...`;
 
-    function closeEditModal() {
-      document.getElementById('editModal').classList.add('hidden');
-      document.getElementById('editModal').classList.remove('flex');
-    }
+      try {
+        const res = await fetch(INVENTORY_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'closing_stock',
+            sheet: activeSheet
+          })
+        });
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'Gagal melakukan Closing Stock');
 
-    async function saveEditItem(e) {
-      e.preventDefault();
-      if (!window.isAdminUser) return;
-      const id = document.getElementById('editId').value;
-
-      const { error } = await sb.from('inventory').update({
-        code: document.getElementById('editCode').value,
-        name: document.getElementById('editName').value,
-        location: document.getElementById('editLocation').value,
-        unit: document.getElementById('editUnit').value,
-        initial: parseInt(document.getElementById('editInitial').value, 10) || 0
-      }).eq('id', id);
-
-      if (error) return showToast('Gagal update barang: ' + error.message, true);
-      closeEditModal();
-      showToast('Data barang berhasil diperbarui!');
-      loadData(false);
-    }
-
-    async function deleteItem(id, name) {
-      if (!window.isAdminUser) return;
-      if (!confirm(`Hapus barang "${name}" beserta seluruh riwayat mutasinya?`)) return;
-
-      const { error } = await sb.from('inventory').delete().eq('id', id);
-      if (error) return showToast('Gagal menghapus: ' + error.message, true);
-      showToast('Barang berhasil dihapus.');
-      loadData(false);
-    }
-
-    async function deleteLog(id) {
-      if (!window.isAdminUser) return;
-      if (!confirm('Hapus catatan riwayat mutasi ini?')) return;
-      const { error } = await sb.from('logs').delete().eq('id', id);
-      if (error) return showToast('Gagal menghapus log: ' + error.message, true);
-      loadData(false);
+        showToast(json.message);
+        await loadData(false);
+      } catch (err) {
+        showToast('Gagal Closing Stock: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-lock"></i> Closing Stock`;
+      }
     }
 
     function renderTable() {
       const q = (document.getElementById('searchBox').value || '').toLowerCase();
-      const filtered = items.filter(r => `${r.code} ${r.name} ${r.location}`.toLowerCase().includes(q));
-      const colSpan = window.isAdminUser ? 9 : 8;
+      const filtered = items.filter(r => `${r.kode} ${r.nama}`.toLowerCase().includes(q));
 
       document.getElementById('tbody').innerHTML = filtered.length ? filtered.map(r => {
-        const stok = Number(r.initial || 0) + Number(r.inQty || 0) - Number(r.outQty || 0);
-        const safeNameAttr = escapeHtml((r.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
-        const adminBtns = window.isAdminUser ? `
-          <td class="p-3.5 text-center space-x-1">
-            <button onclick="openEditModal(${Number(r.id)})" class="px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-lg font-bold cursor-pointer" title="Edit">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button onclick="deleteItem(${Number(r.id)}, '${safeNameAttr}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer" title="Hapus">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>` : '';
-
+        const stok = Number(r.stok_akhir) || 0;
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-3.5 font-mono text-slate-500">${escapeHtml(r.code || '-')}</td>
-            <td class="p-3.5 font-bold text-slate-900">${escapeHtml(r.name || '-')}</td>
-            <td class="p-3.5">${escapeHtml(r.location || '-')}</td>
-            <td class="p-3.5 text-center">${Number(r.initial || 0)}</td>
-            <td class="p-3.5 text-center font-bold text-emerald-600">+${Number(r.inQty || 0)}</td>
-            <td class="p-3.5 text-center font-bold text-rose-600">-${Number(r.outQty || 0)}</td>
-            <td class="p-3.5 text-center font-extrabold text-slate-900">${stok} ${escapeHtml(r.unit || 'Unit')}</td>
+            <td class="p-3.5 font-mono text-slate-600 font-bold">${escapeHtml(r.kode || '-')}</td>
+            <td class="p-3.5 font-bold text-slate-900">${escapeHtml(r.nama || '-')}</td>
+            <td class="p-3.5 text-center">${Number(r.stok_awal) || 0}</td>
+            <td class="p-3.5 text-center font-bold text-emerald-600">+${Number(r.masuk) || 0}</td>
+            <td class="p-3.5 text-center font-bold text-rose-600">-${Number(r.keluar) || 0}</td>
+            <td class="p-3.5 text-center font-extrabold text-slate-900">${stok}</td>
             <td class="p-3.5">
               <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${stok > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
                 ${stok > 0 ? 'Tersedia' : 'Habis'}
               </span>
             </td>
-            ${adminBtns}
           </tr>`;
-      }).join('') : `<tr><td colspan="${colSpan}" class="p-8 text-center text-slate-400">Belum ada data inventaris barang.</td></tr>`;
+      }).join('') : `<tr><td colspan="7" class="p-8 text-center text-slate-400">Tidak ada barang yang cocok dengan pencarian.</td></tr>`;
+    }
+
+    function setLogFilter(type) {
+      logFilter = type;
+      ['ALL', 'OUT', 'IN'].forEach(t => {
+        const b = document.getElementById(`logBtn-${t}`);
+        if (b) {
+          b.className = t === type
+            ? 'px-3 py-1 rounded-lg bg-[#0B2545] text-white font-bold cursor-pointer'
+            : 'px-3 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold cursor-pointer';
+        }
+      });
+      renderLogs();
     }
 
     function renderLogs() {
-      const colSpan = window.isAdminUser ? 7 : 6;
-      document.getElementById('logBody').innerHTML = logs.length ? logs.map(l => {
-        const waktu = l.created_at ? new Date(l.created_at).toLocaleString('id-ID') : '-';
-        const isOut = l.type === 'OUT';
-        const namaBarang = l.inventory ? `${escapeHtml(l.inventory.code || '')} - ${escapeHtml(l.inventory.name || '')}` : `ID #${Number(l.inventory_id)}`;
-        const delBtn = window.isAdminUser ? `
-          <td class="p-3.5 text-center">
-            <button onclick="deleteLog(${Number(l.id)})" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold cursor-pointer">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>` : '';
+      const shown = logFilter === 'ALL' ? combinedLogs : combinedLogs.filter(l => l.type === logFilter);
 
+      document.getElementById('logBody').innerHTML = shown.length ? shown.map(l => {
+        const isOut = l.type === 'OUT';
         return `
           <tr class="hover:bg-slate-50">
-            <td class="p-3.5 text-slate-500">${escapeHtml(waktu)}</td>
+            <td class="p-3.5 text-slate-500 whitespace-nowrap">${escapeHtml(l.tgl || '-')}</td>
             <td class="p-3.5">
               <span class="px-2 py-0.5 rounded-md font-bold text-[10px] ${isOut ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                ${isOut ? 'PENGAMBILAN' : 'STOK MASUK'}
+                ${isOut ? 'BARANG KELUAR' : 'BARANG MASUK'}
               </span>
             </td>
-            <td class="p-3.5 font-bold text-slate-800">${namaBarang}</td>
-            <td class="p-3.5 text-center font-extrabold ${isOut ? 'text-rose-600' : 'text-emerald-600'}">${isOut ? '-' : '+'}${Number(l.quantity)}</td>
-            <td class="p-3.5 font-semibold">${escapeHtml(l.pic_name || '-')}</td>
-            <td class="p-3.5 text-slate-600">${escapeHtml(l.notes || '-')}</td>
-            ${delBtn}
+            <td class="p-3.5 font-bold text-slate-800">${escapeHtml(l.nama || '-')}</td>
+            <td class="p-3.5 text-center font-extrabold ${isOut ? 'text-rose-600' : 'text-emerald-600'}">${isOut ? '-' : '+'}${Number(l.jumlah) || 0}</td>
+            <td class="p-3.5 font-semibold">${escapeHtml(l.user || '-')}</td>
+            <td class="p-3.5 text-slate-600">${escapeHtml(l.catatan || '-')}</td>
           </tr>`;
-      }).join('') : `<tr><td colspan="${colSpan}" class="p-6 text-center text-slate-400">Belum ada riwayat pengambilan atau mutasi barang.</td></tr>`;
+      }).join('') : `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada riwayat mutasi barang pada kategori ini.</td></tr>`;
     }
 
     document.addEventListener('DOMContentLoaded', () => loadData(false));

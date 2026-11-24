@@ -79,8 +79,12 @@ function applyRoleUI(role) {
 }
 
 function isPageBlockedForRole(role) {
-  if (_isAdminOnlyPage && role !== 'ADMIN') return true;
-  if (_isBlockedPageForViewer && role === 'VIEWER') return true;
+  const shellPage = (document.getElementById('appShell')?.dataset?.page || '').toLowerCase();
+  const isViewerBlocked = _isBlockedPageForViewer || VIEWER_BLOCKED_PAGES.includes(shellPage);
+  const isAdminBlocked = _isAdminOnlyPage || ADMIN_ONLY_PAGES.includes(shellPage);
+
+  if (isAdminBlocked && role !== 'ADMIN') return true;
+  if (isViewerBlocked && role === 'VIEWER') return true;
   return false;
 }
 
