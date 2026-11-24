@@ -35,6 +35,41 @@
 
         <div id="pageHeader"></div>
 
+        <!-- PANEL SINKRONISASI GOOGLE SPREADSHEET APAR -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base shrink-0">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-extrabold text-[#0B2545]">Sinkronisasi Google Spreadsheet APAR (Table 1)</span>
+                        <span id="aparSyncBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Terhubung</span>
+                    </div>
+                    <p id="aparSyncDesc" class="text-[11px] text-slate-500 mt-0.5">
+                        Terhubung dua arah dengan Google Spreadsheet APAR &amp; kartu kendali QR unit.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <a id="btnOpenAparSheet" href="https://docs.google.com/spreadsheets" target="_blank"
+                   class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-up-right-from-square"></i> Spreadsheet
+                </a>
+
+                <button onclick="syncFromSpreadsheet(true)" id="btnSyncAparSheet"
+                        class="admin-only px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Tarik Data Sheet
+                </button>
+
+                <button onclick="fetchAparData(true)"
+                        class="px-3.5 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+            </div>
+        </div>
+
         <!-- BANNER PERINGATAN KADALUARSA -->
         <div id="expiryAlertBanner" class="hidden bg-amber-50 border-l-4 border-amber-500 rounded-xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -173,6 +208,8 @@
     <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
 
     <script>
+        const APAR_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwv3-0KKLRPErGISI7fafm1UwCV7bR5pieAl7B0E_OL2KJofbTNNiFMI_PYEYtOIKm0jA/exec';
+
         let allAparRows = [];
         let currentTab = 'ALL';
 
@@ -181,7 +218,7 @@
             el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
-            setTimeout(() => el.remove(), 4000);
+            setTimeout(() => el.remove(), 4500);
         }
 
         function getExpiryStatus(r) {
@@ -207,7 +244,63 @@
             return { level: 'OK', days: null };
         }
 
-        async function fetchAparData() {
+        async function detectSpreadsheetLink() {
+            try {
+                const res = await fetch(`${APAR_APPS_SCRIPT_URL}?action=info&t=${Date.now()}`);
+                const json = await res.json();
+                if (json && json.spreadsheet_url) {
+                    const linkBtn = document.getElementById('btnOpenAparSheet');
+                    if (linkBtn) linkBtn.href = json.spreadsheet_url;
+                }
+            } catch (e) {
+                // Tetap gunakan link default jika deployment Apps Script belum diperbarui
+            }
+        }
+
+        async function syncFromSpreadsheet(notify = true) {
+            const btn = document.getElementById('btnSyncAparSheet');
+            const badge = document.getElementById('aparSyncBadge');
+            const desc = document.getElementById('aparSyncDesc');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyinkronkan...`;
+            }
+            badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
+            badge.innerText = 'Menyinkronkan...';
+
+            try {
+                const res = await fetch(`${APAR_APPS_SCRIPT_URL}?action=sync&t=${Date.now()}`);
+                const json = await res.json();
+                if (json.status !== 'success') {
+                    throw new Error(json.message || 'Gagal menjalankan sinkronisasi Spreadsheet.');
+                }
+
+                if (json.spreadsheet_url) {
+                    const linkBtn = document.getElementById('btnOpenAparSheet');
+                    if (linkBtn) linkBtn.href = json.spreadsheet_url;
+                }
+
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                badge.innerText = 'Tersinkronisasi';
+                desc.innerText = `${json.message} • Pukul ${new Date().toLocaleTimeString('id-ID')}`;
+
+                await fetchAparData(false);
+                if (notify) showToast(json.message);
+            } catch (err) {
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700';
+                badge.innerText = 'Perhatian';
+                desc.innerText = err.message;
+                if (notify) showToast('Sinkronisasi Spreadsheet: ' + err.message, true);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Tarik Data Sheet`;
+                }
+            }
+        }
+
+        async function fetchAparData(notify = false) {
             const { data, error } = await sb
                 .from('apar')
                 .select('*')
@@ -218,6 +311,7 @@
             buildTabs();
             updateStats();
             renderTable();
+            if (notify) showToast('Data APAR berhasil diperbarui!');
         }
 
         function buildTabs() {
@@ -500,7 +594,10 @@
             showToast('Laporan Excel berhasil diunduh!');
         }
 
-        document.addEventListener('DOMContentLoaded', fetchAparData);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAparData(false);
+            detectSpreadsheetLink();
+        });
     </script>
 </body>
 </html>
