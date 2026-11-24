@@ -23,29 +23,46 @@
 
         <div id="pageHeader"></div>
 
-        <!-- PANEL STATUS SINKRONISASI SPREADSHEET -->
-        <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <!-- PANEL KONTROL TAHUN & SINKRONISASI SPREADSHEET -->
+        <div class="bg-white p-4 rounded-xl shadow-2xs border border-slate-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base shrink-0">
                     <i class="fa-solid fa-arrows-rotate"></i>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-extrabold text-[#0B2545]">Sinkronisasi Dua Arah Google Spreadsheet (Akses Admin)</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-extrabold text-[#0B2545]">Sinkronisasi Google Spreadsheet</span>
                         <span id="syncBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Menghubungkan...</span>
                     </div>
                     <p id="syncDesc" class="text-[11px] text-slate-500 mt-0.5">
-                        Input jumlah pemakaian bulanan di <b>Sheet BULAN</b> otomatis memperbarui rumus di <b>Sheet KENDARAAN</b>.
+                        Pilih tahun anggaran untuk melihat arsip atau memulai input Januari–Desember tahun baru.
                     </p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
+
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- DROPDOWN PILIH TAHUN -->
+                <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <label for="selectYear" class="text-[11px] font-extrabold text-[#0B2545]">Tahun:</label>
+                    <select id="selectYear" onchange="onYearChange(this.value)"
+                        class="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-extrabold text-[#14532D] focus:outline-none">
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+
+                <!-- TOMBOL BUAT TEMPLATE TAHUN BARU (MISAL 2027) -->
+                <button onclick="createNextYearTemplate()" id="btnNewYear"
+                    class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                    <i class="fa-solid fa-calendar-plus"></i> <span id="lblNextYear">Buat Tahun 2027</span>
+                </button>
+
                 <a href="https://docs.google.com/spreadsheets/d/1x8cEdcmVXasq96KWGsWG3R-esxZsau2U3xml1ZmWVAs/edit?gid=651634409#gid=651634409" target="_blank"
                    class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-up-right-from-square"></i> Buka Spreadsheet
+                    <i class="fa-solid fa-up-right-from-square"></i> Spreadsheet
                 </a>
+
                 <button onclick="loadUtilitas()" class="px-3.5 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-rotate"></i> Refresh Data
+                    <i class="fa-solid fa-rotate"></i> Refresh
                 </button>
             </div>
         </div>
@@ -55,10 +72,10 @@
             <div class="flex flex-wrap justify-between items-center border-b border-slate-200 bg-slate-50 px-3 gap-2">
                 <div class="flex overflow-x-auto">
                     <button onclick="switchTab('kendaraan')" id="btnTab-kendaraan" class="u-tab-btn px-5 py-3.5 text-xs font-bold text-slate-600 whitespace-nowrap tab-active cursor-pointer">
-                        <i class="fas fa-table mr-1.5"></i> 1. Sheet KENDARAAN (Rekap &amp; %)
+                        <i class="fas fa-table mr-1.5"></i> 1. Sheet KENDARAAN (<span class="active-year-label">2026</span>)
                     </button>
                     <button onclick="switchTab('bulan')" id="btnTab-bulan" class="u-tab-btn px-5 py-3.5 text-xs font-bold text-slate-600 whitespace-nowrap cursor-pointer">
-                        <i class="fas fa-pen-to-square mr-1.5"></i> 2. Input Pemakaian (Sheet BULAN)
+                        <i class="fas fa-pen-to-square mr-1.5"></i> 2. Input Pemakaian Jan–Des (<span class="active-year-label">2026</span>)
                     </button>
                 </div>
 
@@ -74,35 +91,35 @@
             <!-- VIEW 1: SHEET KENDARAAN (HASIL OTOMATIS DARI SPREADSHEET) -->
             <div id="view-kendaraan" class="p-4 space-y-3">
                 <div class="bg-sky-50/80 border border-sky-200 rounded-xl p-3 text-xs text-slate-700">
-                    <span class="font-extrabold text-[#0B2545]"><i class="fas fa-check-circle text-sky-600 mr-1"></i> Terhubung Otomatis ke Sheet KENDARAAN:</span>
-                    Seluruh kolom kapasitas, frekuensi, rasio bulanan, jumlah, dan persentase (<code>%</code>) di bawah ini ditarik langsung dari Google Spreadsheet Anda.
+                    <span class="font-extrabold text-[#0B2545]"><i class="fas fa-check-circle text-sky-600 mr-1"></i> Rekap Otomatis Tahun <span class="active-year-label">2026</span>:</span>
+                    Tampilan, struktur kolom, dan rumus persentase (<code>%</code>) tetap dipertahankan persis seperti template spreadsheet.
                 </div>
 
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
                     <table id="tableKendaraan" class="w-full text-left border-collapse text-[11px]">
                         <tbody id="tbodyKendaraan" class="divide-y divide-slate-200">
-                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet KENDARAAN dari Google Spreadsheet...</td></tr>
+                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet KENDARAAN...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- VIEW 2: SHEET BULAN (INPUT JUMLAH PEMAKAIAN PER BULAN) -->
+            <!-- VIEW 2: SHEET BULAN (INPUT JUMLAH PEMAKAIAN PER BULAN JAN - DES) -->
             <div id="view-bulan" class="hidden p-4 space-y-3">
                 <div class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 text-xs text-slate-700 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <span class="font-extrabold text-[#14532D]"><i class="fas fa-calculator mr-1"></i> Input Jumlah Hari Pemakaian Per Bulan:</span>
-                        Ubah angka pada kolom bulan di bawah ini lalu klik <b>Simpan &amp; Hitung Ulang Sheet KENDARAAN</b>.
+                        <span class="font-extrabold text-[#14532D]"><i class="fas fa-calculator mr-1"></i> Input Pemakaian Tahun <span class="active-year-label">2026</span> (Januari – Desember):</span>
+                        Isi jumlah hari pemakaian tiap bulan lalu klik <b>Simpan &amp; Hitung Ulang</b>.
                     </div>
-                    <button onclick="saveBatchBulan()" id="btnSaveBatch" class="admin-only px-4 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer">
-                        <i class="fas fa-cloud-arrow-up mr-1"></i> Simpan &amp; Hitung Ulang Sheet KENDARAAN
+                    <button onclick="saveBatchBulan()" id="btnSaveBatch" class="px-4 py-2 bg-[#14532D] hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer">
+                        <i class="fas fa-cloud-arrow-up mr-1"></i> Simpan &amp; Hitung Ulang Tahun <span class="active-year-label">2026</span>
                     </button>
                 </div>
 
                 <div class="overflow-x-auto border border-slate-200 rounded-xl">
                     <table id="tableBulan" class="w-full text-left border-collapse text-[11px]">
                         <tbody id="tbodyBulan" class="divide-y divide-slate-200">
-                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet BULAN dari Google Spreadsheet...</td></tr>
+                            <tr><td class="p-8 text-center text-slate-400">Memuat data Sheet BULAN...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -116,6 +133,8 @@
     <script>
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOeFQWgxdTi8av9b_en_cliuRhnWaifYzwYfWFDc2kiH6hfUHj45MGG63rBwmd4KUj/exec';
 
+        let selectedYear = '2026';
+        let availableYears = ['2026'];
         let sheetData = { kendaraan: [], bulan: [] };
         let pendingUpdates = new Map();
         let currentTab = 'kendaraan';
@@ -125,7 +144,7 @@
             el.className = `${isErr ? 'bg-rose-600' : 'bg-[#14532D]'} text-white px-4 py-3 rounded-xl shadow-lg text-xs font-bold`;
             el.innerText = msg;
             document.getElementById('toast').appendChild(el);
-            setTimeout(() => el.remove(), 4000);
+            setTimeout(() => el.remove(), 4500);
         }
 
         function switchTab(name) {
@@ -134,6 +153,29 @@
                 document.getElementById(`view-${t}`).classList.toggle('hidden', t !== name);
                 document.getElementById(`btnTab-${t}`).classList.toggle('tab-active', t === name);
             });
+        }
+
+        function updateYearLabels() {
+            document.querySelectorAll('.active-year-label').forEach(el => {
+                el.innerText = selectedYear;
+            });
+
+            const sel = document.getElementById('selectYear');
+            sel.innerHTML = availableYears.map(y =>
+                `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`
+            ).join('');
+
+            const maxYear = Math.max(...availableYears.map(Number));
+            const nextYear = String(maxYear + 1);
+            document.getElementById('lblNextYear').innerText = `Buat Tahun ${nextYear}`;
+            document.getElementById('btnNewYear').dataset.nextYear = nextYear;
+            document.getElementById('btnNewYear').dataset.sourceYear = String(maxYear);
+        }
+
+        function onYearChange(newYear) {
+            selectedYear = newYear;
+            updateYearLabels();
+            loadUtilitas();
         }
 
         async function loadUtilitas() {
@@ -147,20 +189,25 @@
             const desc = document.getElementById('syncDesc');
 
             badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
-            badge.innerText = 'Menyinkronkan...';
+            badge.innerText = `Memuat ${selectedYear}...`;
 
             try {
-                const res = await fetch(APPS_SCRIPT_URL);
+                const res = await fetch(`${APPS_SCRIPT_URL}?year=${encodeURIComponent(selectedYear)}`);
                 const json = await res.json();
                 if (json.status !== 'success') throw new Error(json.message || 'Gagal membaca spreadsheet');
+
+                if (Array.isArray(json.available_years) && json.available_years.length > 0) {
+                    availableYears = json.available_years;
+                }
+                updateYearLabels();
 
                 sheetData.kendaraan = json.kendaraan || [];
                 sheetData.bulan = json.bulan || [];
                 pendingUpdates.clear();
 
                 badge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800';
-                badge.innerText = 'Terhubung Live';
-                desc.innerText = `Tersinkronisasi pukul ${new Date().toLocaleTimeString('id-ID')} • Sheet KENDARAAN & Sheet BULAN aktif.`;
+                badge.innerText = `Aktif Tahun ${selectedYear}`;
+                desc.innerText = `Tersinkronisasi pukul ${new Date().toLocaleTimeString('id-ID')} • Menampilkan data tahun ${selectedYear}.`;
 
                 renderAllSheets();
             } catch (err) {
@@ -168,6 +215,45 @@
                 badge.innerText = 'Gagal Koneksi';
                 desc.innerText = err.message;
                 showToast('Gagal memuat dari Apps Script: ' + err.message, true);
+            }
+        }
+
+        async function createNextYearTemplate() {
+            const btn = document.getElementById('btnNewYear');
+            const nextYear = btn.dataset.nextYear || '2027';
+            const sourceYear = btn.dataset.sourceYear || '2026';
+
+            if (!confirm(`Buat lembar baru untuk Tahun ${nextYear}?\n\n• Tampilan & rumus dari Tahun ${sourceYear} akan disalin utuh.\n• Angka pemakaian Jan–Des di Tahun ${nextYear} akan di-nol-kan untuk input baru.\n• Data arsip Tahun ${sourceYear} tetap aman.`)) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Menyiapkan ${nextYear}...`;
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_year',
+                        source_year: sourceYear,
+                        target_year: nextYear
+                    })
+                });
+
+                setTimeout(async () => {
+                    selectedYear = nextYear;
+                    if (!availableYears.includes(nextYear)) availableYears.push(nextYear);
+                    await loadUtilitas();
+                    btn.disabled = false;
+                    showToast(`Berhasil! Sheet Tahun ${nextYear} siap diisi mulai Januari–Desember.`);
+                    switchTab('bulan');
+                }, 2200);
+            } catch (err) {
+                btn.disabled = false;
+                updateYearLabels();
+                showToast('Gagal membuat tahun baru: ' + err.message, true);
             }
         }
 
@@ -179,7 +265,7 @@
         function renderSheetTable(sheetName, rows, tbodyId, isEditableSheet) {
             const tbody = document.getElementById(tbodyId);
             if (!rows || rows.length === 0) {
-                tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-400">Data sheet ${sheetName.toUpperCase()} kosong.</td></tr>`;
+                tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-400">Data sheet ${sheetName.toUpperCase()} tahun ${selectedYear} belum tersedia.</td></tr>`;
                 return;
             }
 
@@ -250,12 +336,12 @@
         async function saveBatchBulan() {
             if (!window.isAdminUser) return;
             if (pendingUpdates.size === 0) {
-                return showToast('Tidak ada perubahan angka di Sheet BULAN yang perlu disimpan.');
+                return showToast(`Tidak ada perubahan angka di tahun ${selectedYear} yang perlu disimpan.`);
             }
 
             const btn = document.getElementById('btnSaveBatch');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan & Menghitung Ulang...';
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan Tahun ${selectedYear}...`;
 
             try {
                 await fetch(APPS_SCRIPT_URL, {
@@ -264,6 +350,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'update_batch',
+                        year: selectedYear,
                         updates: Array.from(pendingUpdates.values())
                     })
                 });
@@ -271,13 +358,13 @@
                 setTimeout(async () => {
                     await loadUtilitas();
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Sheet KENDARAAN';
-                    showToast('Berhasil! Sheet BULAN & Sheet KENDARAAN telah diperbarui otomatis.');
+                    btn.innerHTML = `<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Tahun <span class="active-year-label">${selectedYear}</span>`;
+                    showToast(`Berhasil! Data Tahun ${selectedYear} telah diperbarui dan dihitung ulang otomatis.`);
                     switchTab('kendaraan');
                 }, 1500);
             } catch (err) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Sheet KENDARAAN';
+                btn.innerHTML = `<i class="fas fa-cloud-arrow-up mr-1"></i> Simpan & Hitung Ulang Tahun <span class="active-year-label">${selectedYear}</span>`;
                 showToast('Gagal menyimpan ke Spreadsheet: ' + err.message, true);
             }
         }
@@ -288,16 +375,16 @@
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
                 <head><meta charset="UTF-8"></head>
                 <body>
-                    <h3>DATA ${currentTab.toUpperCase()} - POLTEKBANG SURABAYA</h3>
+                    <h3>DATA ${currentTab.toUpperCase()} TAHUN ${selectedYear} - POLTEKBANG SURABAYA</h3>
                     ${document.getElementById(tableId).outerHTML}
                 </body></html>
             `;
             const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `Sheet_${currentTab.toUpperCase()}_Poltekbang_${new Date().toISOString().slice(0, 10)}.xls`;
+            link.download = `Sheet_${currentTab.toUpperCase()}_${selectedYear}_Poltekbang.xls`;
             link.click();
-            showToast('File Excel berhasil diunduh!');
+            showToast(`File Excel Tahun ${selectedYear} berhasil diunduh!`);
         }
 
         document.addEventListener('DOMContentLoaded', loadUtilitas);
