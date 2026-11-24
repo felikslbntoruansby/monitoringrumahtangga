@@ -160,7 +160,7 @@
           <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></span>
         </div>
         <div id="kpi-inventaris" class="text-3xl font-extrabold text-[#0B2545] mt-2.5 tabular-nums">0</div>
-        <div class="text-[11px] text-slate-500 mt-1">Total stok tersedia</div>
+        <div id="kpi-inventaris-sub" class="text-[11px] text-slate-500 mt-1">Memuat stok Spreadsheet...</div>
       </a>
 
       <a href="ac.html" class="block bg-white p-4 rounded-xl border border-slate-200 border-t-4 border-t-cyan-600 shadow-2xs hover:shadow-md transition">
@@ -236,6 +236,8 @@
   <div id="toast" class="fixed bottom-5 right-5 z-50 space-y-2 max-w-sm"></div>
 
   <script>
+    const INVENTORY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsjMVGpnBxT8TQj_b3I-tKaGNLNex3_iFbP3-bvkO7rM18lnOjQLFJ1YBKR05rHfqR/exec';
+
     setInterval(() => {
       document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
     }, 1000);
@@ -259,26 +261,44 @@
       return data || [];
     }
 
+    async function fetchInventarisSpreadsheet() {
+      const kpiInv = document.getElementById('kpi-inventaris');
+      if (!kpiInv) return;
+
+      const [resBarang, resAlat] = await Promise.all([
+        fetch(`${INVENTORY_SCRIPT_URL}?sheet=${encodeURIComponent('LAPORAN STOK BARANG')}&t=${Date.now()}`),
+        fetch(`${INVENTORY_SCRIPT_URL}?sheet=${encodeURIComponent('LAPORAN STOK PERALATAN KERJA')}&t=${Date.now()}`)
+      ]);
+
+      const [jsonBarang, jsonAlat] = await Promise.all([resBarang.json(), resAlat.json()]);
+
+      const listBarang = jsonBarang.stok || [];
+      const listAlat = jsonAlat.stok || [];
+
+      const totalStokBarang = listBarang.reduce((s, x) => s + (Number(x.stok_akhir) || 0), 0);
+      const totalStokAlat = listAlat.reduce((s, x) => s + (Number(x.stok_akhir) || 0), 0);
+      const grandTotalStok = totalStokBarang + totalStokAlat;
+
+      kpiInv.innerText = grandTotalStok.toLocaleString('id-ID');
+
+      const subInv = document.getElementById('kpi-inventaris-sub');
+      if (subInv) {
+        subInv.innerText = `Barang: ${totalStokBarang.toLocaleString('id-ID')} • Alat Kerja: ${totalStokAlat.toLocaleString('id-ID')}`;
+      }
+    }
+
     async function loadAllData(notify = false) {
       try {
-        const [ruangan, kendaraan, inventaris, ac, apar] = await Promise.all([
+        const [ruangan, kendaraan, ac, apar] = await Promise.all([
           fetchTable('peminjaman_ruangan'),
           fetchTable('peminjaman_kendaraan'),
-          fetchTable('inventory'),
           fetchTable('maintenance_ac'),
-          fetchTable('apar')
+          fetchTable('apar'),
+          fetchInventarisSpreadsheet()
         ]);
 
         document.getElementById('kpi-ruangan').innerText = ruangan.length;
         document.getElementById('kpi-kendaraan').innerText = kendaraan.length;
-
-        const kpiInv = document.getElementById('kpi-inventaris');
-        if (kpiInv) {
-          const totalBarang = inventaris.reduce((s, x) => {
-            return s + (Number(x.initial || 0) + Number(x.inQty || 0) - Number(x.outQty || 0));
-          }, 0);
-          kpiInv.innerText = totalBarang;
-        }
 
         const uniqueAc = new Set(ac.map(x => x.kode_unit)).size;
         document.getElementById('kpi-ac').innerText = uniqueAc;
